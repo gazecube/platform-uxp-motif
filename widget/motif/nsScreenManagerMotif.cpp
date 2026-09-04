@@ -8,6 +8,8 @@
 #include "nsRect.h"
 
 #include <X11/Xlib.h>
+#include <algorithm>
+#include <stdint.h>
 
 NS_IMPL_ISUPPORTS(nsScreenManagerMotif, nsIScreenManager)
 
@@ -108,6 +110,6 @@ nsScreenManagerMotif::ScreenForNativeWidget(void* aWidget,
 {
   // Xt widgets may be translated to root coordinates, but the single-screen
   // path is overwhelmingly common for the IRIX target and remains correct on
-  // ordinary X11.  Multi-screen callers fall back to the primary X screen.
+  // ordinary X11. Multi-screen callers fall back to the primary X screen.
   return GetPrimaryScreen(aOutScreen);
 }
