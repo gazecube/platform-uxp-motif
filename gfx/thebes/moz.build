@@ -106,7 +106,7 @@ elif 'gtk' in CONFIG['MOZ_WIDGET_TOOLKIT']:
 
 elif CONFIG['MOZ_WIDGET_TOOLKIT'] == 'motif':
     # UXP's fontconfig/FreeType and Xlib rendering code is already independent
-    # of GTK.  Reuse that modern rendering stack and replace only the native
+    # of GTK. Reuse that modern rendering stack and replace only the native
     # widget integration with Motif/Xt.
     EXPORTS += [
         'gfxFT2FontBase.h',
@@ -127,13 +127,6 @@ elif CONFIG['MOZ_WIDGET_TOOLKIT'] == 'motif':
         'gfxXlibSurface.cpp',
         'PrintTargetPDF.cpp',
         'PrintTargetPS.cpp',
-    ]
-    # gfxPlatform.cpp predates a generic Unix platform hook.  Rename the
-    # existing declaration locally in this TU so we do not globally pretend
-    # Motif is GTK.  gfxPlatformMotif.cpp implements this renamed class.
-    SOURCES['gfxPlatform.cpp'].flags += [
-        '-DMOZ_WIDGET_GTK=1',
-        '-DgfxPlatformGtk=gfxPlatformMotif',
     ]
 
 elif CONFIG['MOZ_WIDGET_TOOLKIT'] == 'windows':
@@ -178,6 +171,15 @@ SOURCES += [
     'PrintTarget.cpp',
     'PrintTargetThebes.cpp',
 ]
+
+if CONFIG['MOZ_WIDGET_TOOLKIT'] == 'motif':
+    # gfxPlatform.cpp predates a generic Unix platform hook. Rename the
+    # existing declaration locally in this TU so we do not globally pretend
+    # Motif is GTK. gfxPlatformMotif.cpp implements this renamed class.
+    SOURCES['gfxPlatform.cpp'].flags += [
+        '-DMOZ_WIDGET_GTK=1',
+        '-DgfxPlatformGtk=gfxPlatformMotif',
+    ]
 
 UNIFIED_SOURCES += [
     'CJKCompatSVS.cpp',
