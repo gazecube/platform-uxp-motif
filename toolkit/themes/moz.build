@@ -10,9 +10,8 @@
 # MacOS X                 osx (toolkit/themes/osx)
 # Windows                 windows (toolkit/themes/windows) +
 #                         non-mac (toolkit/themes/shared/non-mac)
-# GNOME/Linux             linux (toolkit/themes/linux)
+# Unix/X11                linux (toolkit/themes/linux)
 #                         non-mac (toolkit/themes/shared/non-mac)
-# faststripe              windows + faststripe (no native theme components)
 
 toolkit = CONFIG['MOZ_WIDGET_TOOLKIT']
 if CONFIG['MOZ_PHOENIX']:
@@ -23,7 +22,7 @@ else:
 
 if toolkit == 'cocoa':
     DIRS += ['osx']
-elif toolkit in ('gtk2', 'gtk3'):
+elif toolkit in ('gtk2', 'gtk3', 'motif'):
     DIRS += ['linux']
 else:
     DIRS += ['windows']
