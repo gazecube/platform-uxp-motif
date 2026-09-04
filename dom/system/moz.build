@@ -9,7 +9,7 @@ if toolkit == 'windows':
     DIRS += ['windows']
 elif toolkit == 'cocoa' and [int(x) for x in CONFIG['MACOSX_DEPLOYMENT_TARGET'].split('.')] >= [10, 6]:
     DIRS += ['mac']
-elif toolkit in ('gtk2', 'gtk3'):
+elif toolkit in ('gtk2', 'gtk3', 'motif'):
     DIRS += ['linux']
 
 XPIDL_SOURCES += [
@@ -46,7 +46,6 @@ EXTRA_JS_MODULES += [
 include('/ipc/chromium/chromium-config.mozbuild')
 
 FINAL_LIBRARY = 'xul'
-# We fire the nsDOMDeviceAcceleration
 LOCAL_INCLUDES += [
     '/dom/base',
     '/dom/bindings',
