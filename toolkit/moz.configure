@@ -41,20 +41,13 @@ set_config('L10NBASEDIR', l10n_base)
 
 # Default toolkit
 # ==============================================================
-# Normally, we'd want to use the `default` field on the option, but that
-# requires --target to be resolved at --help time, which requires to run
-# config.guess, which we want to avoid. Even better, we could actually set
-# `choices` depending on the target, but that doesn't pan out for the same
-# reason.
 option('--enable-default-toolkit', nargs=1,
        choices=('cairo-windows', 'cairo-gtk2', 'cairo-gtk2-x11', 'cairo-gtk3',
-                'cairo-cocoa', 'cairo-uikit'),
+                'cairo-motif', 'cairo-cocoa', 'cairo-uikit'),
        help='Select default toolkit')
 
 @depends('--enable-default-toolkit', target, '--help')
 def toolkit(value, target, _):
-    # Define possible choices for each platform. The default is the first one
-    # listed when there are several.
     os = target.os
     if target.os == 'WINNT':
         platform_choices = ('cairo-windows',)
@@ -63,7 +56,8 @@ def toolkit(value, target, _):
     elif target.os == 'iOS':
         platform_choices = ('cairo-uikit',)
     else:
-        platform_choices = ('cairo-gtk3', 'cairo-gtk2', 'cairo-gtk2-x11')
+        platform_choices = ('cairo-gtk3', 'cairo-gtk2', 'cairo-gtk2-x11',
+                            'cairo-motif')
 
     if value:
         if value[0] not in platform_choices:
@@ -101,6 +95,23 @@ def toolkit_define(toolkit):
 
 set_define(toolkit_define, True)
 
+# Motif has no pkg-config module in the historical ABI we target.  Keep the
+# link set deliberately small and let the normal X checks discover the rest.
+@depends(toolkit)
+def motif_tk_libs(toolkit):
+    if toolkit == 'motif':
+        return ('-lXm', '-lXt', '-lX11')
+
+@depends(toolkit)
+def motif_tk_cflags(toolkit):
+    if toolkit == 'motif':
+        return ()
+
+set_config('TK_LIBS', motif_tk_libs)
+set_config('TK_CFLAGS', motif_tk_cflags)
+add_old_configure_assignment('TK_LIBS', motif_tk_libs)
+add_old_configure_assignment('TK_CFLAGS', motif_tk_cflags)
+
 
 option('--without-x', env='WITHOUT_X', help='Disable X11 support')
 
@@ -109,15 +120,22 @@ def x11(value, toolkit):
     if not value:
         die('--without-x is not supported')
 
-    x11_toolkits = ('gtk2', 'gtk3')
+    x11_toolkits = ('gtk2', 'gtk3', 'motif')
     if value and value.origin != 'default' and toolkit not in x11_toolkits:
         die('--with-x is only valid with --enable-default-toolkit={%s}',
             ','.join(x11_toolkits))
 
     return True if value and toolkit in x11_toolkits else None
 
-set_config('MOZ_ENABLE_XREMOTE', x11)
-set_define('MOZ_ENABLE_XREMOTE', x11)
+@depends(x11, toolkit)
+def xremote(x11, toolkit):
+    # The existing XRemote implementation is GTK-specific.  Motif has X11,
+    # but does not opt into that implementation yet.
+    if x11 and toolkit in ('gtk2', 'gtk3'):
+        return True
+
+set_config('MOZ_ENABLE_XREMOTE', xremote)
+set_define('MOZ_ENABLE_XREMOTE', xremote)
 set_config('MOZ_X11', x11)
 set_define('MOZ_X11', x11)
 add_old_configure_assignment('MOZ_X11', x11)
@@ -160,7 +178,7 @@ set_define(gl_provider_define, True)
 # ==============================================================
 @depends(toolkit)
 def pdf_printing(toolkit):
-    if toolkit in ('windows', 'gtk2', 'gtk3'):
+    if toolkit in ('windows', 'gtk2', 'gtk3', 'motif'):
         return True
 
 @depends(pdf_printing)
@@ -168,7 +186,6 @@ def pdf_surface_feature(pdf_printing):
     if pdf_printing:
         return '#define CAIRO_HAS_PDF_SURFACE 1'
     else:
-        # CONFIGURE_SUBST_FILES need explicit empty values.
         return ''
 
 set_config('MOZ_PDF_PRINTING', pdf_printing)
@@ -182,7 +199,7 @@ option(env='MOZ_INSTRUMENT_EVENT_LOOP',
 
 @depends('MOZ_INSTRUMENT_EVENT_LOOP', toolkit)
 def instrument_event_loop(value, toolkit):
-    if value or (toolkit in ('windows', 'gtk2', 'gtk3', 'cocoa') and value.origin == 'default'):
+    if value or (toolkit in ('windows', 'gtk2', 'gtk3', 'motif', 'cocoa') and value.origin == 'default'):
         return True
 
 set_config('MOZ_INSTRUMENT_EVENT_LOOP', instrument_event_loop)
@@ -214,9 +231,6 @@ option('--disable-wmf',
 def wmf(value, target):
     enabled = bool(value)
     if value.origin == 'default':
-        # Enable Windows Media Foundation support by default.
-        # Note our minimum SDK version is Windows 7 SDK, so we are (currently)
-        # guaranteed to have a recent-enough SDK to build WMF.
         enabled = target.os == 'WINNT'
     if enabled and target.os != 'WINNT':
         die('Cannot enable Windows Media Foundation support on %s', target.os)
@@ -286,7 +300,6 @@ set_config('MOZ_GPSD', depends_if(system_gpsd)(lambda _: True))
 
 # Miscellaneous programs
 # ==============================================================
-
 check_prog('TAR', ('gnutar', 'gtar', 'tar'))
 check_prog('UNZIP', ('unzip',))
 check_prog('ZIP', ('zip',))
@@ -296,11 +309,8 @@ check_prog('ZIP', ('zip',))
 include('../build/moz.configure/keyfiles.configure')
 
 simple_keyfile('Mozilla API')
-
 simple_keyfile('Google API')
-
 id_and_secret_keyfile('Bing API')
-
 simple_keyfile('Adjust SDK')
 
 # Gecko integrated IPC fuzzer
@@ -382,7 +392,7 @@ def all_necko_protocols(build_env, toolkit_gtk, _):
     basedir = os.path.join(build_env.topsrcdir, 'netwerk', 'protocol')
     return tuple(sorted(p for p in os.listdir(basedir)
                         if (os.path.isdir(os.path.join(basedir, p)) and
-						    (p != 'gio' or toolkit_gtk))))
+                            (p != 'gio' or toolkit_gtk))))
 
 default_necko_protocols = all_necko_protocols
 
@@ -459,7 +469,6 @@ def skia_gpu(value, skia, target):
     if value.origin == 'default':
         if not skia:
             return None
-        # Skia GPU support may not reliably build on certain *BSDs (see bug 1234494)
         if target.os in ('NetBSD', 'OpenBSD'):
             return None
     elif value and not skia:
