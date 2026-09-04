@@ -18,6 +18,7 @@ SOURCES += [
     'nsBidiKeyboard.cpp',
     'nsClipboard.cpp',
     'nsLookAndFeel.cpp',
+    'nsMotifGlobals.cpp',
     'nsScreenManagerMotif.cpp',
     'nsScreenMotif.cpp',
     'nsWidgetFactory.cpp',
