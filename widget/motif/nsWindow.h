@@ -9,6 +9,13 @@
 #include "nsBaseWidget.h"
 #include <X11/Intrinsic.h>
 
+/*
+ * Initial Motif rollup ownership is local to the Motif backend.  It is kept
+ * separate from nsBaseWidget's private rollup bookkeeping until the popup
+ * bridge grows full X11 grab/rollup semantics.
+ */
+extern nsIRollupListener* gRollupListener;
+
 class nsWindow final : public nsBaseWidget
 {
 public:
@@ -90,7 +97,6 @@ private:
 
   Widget mWidget;
   Display* mDisplay;
-  LayoutDeviceIntRect mBounds;
   bool mCreated;
   bool mDestroyed;
   bool mShown;
