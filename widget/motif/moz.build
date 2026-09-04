@@ -1,0 +1,44 @@
+# -*- Mode: python; indent-tabs-mode: nil; tab-width: 40 -*-
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+EXPORTS += [
+    'nsAppShell.h',
+    'nsBidiKeyboard.h',
+    'nsClipboard.h',
+    'nsLookAndFeel.h',
+    'nsScreenManagerMotif.h',
+    'nsScreenMotif.h',
+    'nsWindow.h',
+]
+
+SOURCES += [
+    'nsAppShell.cpp',
+    'nsBidiKeyboard.cpp',
+    'nsClipboard.cpp',
+    'nsLookAndFeel.cpp',
+    'nsScreenManagerMotif.cpp',
+    'nsScreenMotif.cpp',
+    'nsWidgetFactory.cpp',
+    'nsWindow.cpp',
+]
+
+include('/ipc/chromium/chromium-config.mozbuild')
+
+FINAL_LIBRARY = 'xul'
+
+LOCAL_INCLUDES += [
+    '/layout/generic',
+    '/layout/style',
+    '/layout/xul',
+    '/widget',
+    '/widget/x11',
+]
+
+DEFINES['CAIRO_GFX'] = True
+DEFINES['MOZ_X11'] = True
+
+CFLAGS += CONFIG['TK_CFLAGS']
+CXXFLAGS += CONFIG['TK_CFLAGS']
+OS_LIBS += CONFIG['TK_LIBS']
