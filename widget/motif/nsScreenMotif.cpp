@@ -4,7 +4,6 @@
 
 #include "nsScreenMotif.h"
 #include "nsAppShell.h"
-#include "gfxPlatform.h"
 
 #include <X11/Xlib.h>
 
@@ -39,8 +38,8 @@ NS_IMETHODIMP
 nsScreenMotif::GetAvailRect(int32_t* aLeft, int32_t* aTop,
                             int32_t* aWidth, int32_t* aHeight)
 {
-  // Motif itself does not impose a work area.  The WM may publish EWMH
-  // _NET_WORKAREA, but IRIX-era WMs are not required to do so.  Start with
+  // Motif itself does not impose a work area. The WM may publish EWMH
+  // _NET_WORKAREA, but IRIX-era WMs are not required to do so. Start with
   // the complete X screen; the window manager remains free to constrain it.
   return GetRect(aLeft, aTop, aWidth, aHeight);
 }
@@ -65,7 +64,6 @@ nsScreenMotif::GetColorDepth(int32_t* aColorDepth)
 NS_IMETHODIMP
 nsScreenMotif::GetDefaultCSSScaleFactor(double* aScaleFactor)
 {
-  *aScaleFactor = gfxPlatform::GetPlatform()->GetDefaultContentBackend() ==
-                  mozilla::gfx::BackendType::NONE ? 1.0 : 1.0;
+  *aScaleFactor = 1.0;
   return NS_OK;
 }
