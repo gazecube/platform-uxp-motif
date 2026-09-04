@@ -1,0 +1,26 @@
+# UXP Motif bootstrap configuration
+#
+# Copy the relevant ac_add_options/export lines into the application's
+# .mozconfig.  platform-uxp is normally built as the platform directory of a
+# UXP application tree, so MOZ_OBJDIR / MOZ_BUILD_APP remain application-owned.
+
+# Select the new Xt/Motif widget backend.
+ac_add_options --enable-default-toolkit=cairo-motif
+
+# UXP's old configure only turns this on automatically for GTK.  The Motif
+# backend deliberately reuses the same GTK-independent Fontconfig/FreeType
+# platform font list, so force its configure checks on.
+export USE_FC_FREETYPE=1
+
+# Current UXP Skia moz.build selects its Unix cairo/freetype font host only for
+# gtk2/gtk3.  Keep the initial Motif bring-up GTK-free and use Cairo/Xlib.
+ac_add_options --disable-skia
+
+# Printing and accessibility are not part of the first native-widget bring-up.
+# They can be enabled once their Unix platform adapters have Motif paths.
+ac_add_options --disable-printing
+ac_add_options --disable-accessibility
+
+# Useful while bringing up a brand-new native backend.
+ac_add_options --enable-debug
+ac_add_options --disable-optimize
