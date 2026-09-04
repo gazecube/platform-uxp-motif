@@ -104,6 +104,38 @@ elif 'gtk' in CONFIG['MOZ_WIDGET_TOOLKIT']:
             'gfxXlibSurface.cpp',
         ]
 
+elif CONFIG['MOZ_WIDGET_TOOLKIT'] == 'motif':
+    # UXP's fontconfig/FreeType and Xlib rendering code is already independent
+    # of GTK.  Reuse that modern rendering stack and replace only the native
+    # widget integration with Motif/Xt.
+    EXPORTS += [
+        'gfxFT2FontBase.h',
+        'gfxPlatformGtk.h',
+        'gfxXlibNativeRenderer.h',
+        'gfxXlibSurface.h',
+    ]
+    EXPORTS.mozilla.gfx += [
+        'PrintTargetPDF.h',
+        'PrintTargetPS.h',
+    ]
+    SOURCES += [
+        'gfxFcPlatformFontList.cpp',
+        'gfxFT2FontBase.cpp',
+        'gfxFT2Utils.cpp',
+        'gfxPlatformMotif.cpp',
+        'gfxXlibNativeRenderer.cpp',
+        'gfxXlibSurface.cpp',
+        'PrintTargetPDF.cpp',
+        'PrintTargetPS.cpp',
+    ]
+    # gfxPlatform.cpp predates a generic Unix platform hook.  Rename the
+    # existing declaration locally in this TU so we do not globally pretend
+    # Motif is GTK.  gfxPlatformMotif.cpp implements this renamed class.
+    SOURCES['gfxPlatform.cpp'].flags += [
+        '-DMOZ_WIDGET_GTK=1',
+        '-DgfxPlatformGtk=gfxPlatformMotif',
+    ]
+
 elif CONFIG['MOZ_WIDGET_TOOLKIT'] == 'windows':
     EXPORTS += [
         'gfxDWriteFonts.h',
@@ -120,7 +152,7 @@ elif CONFIG['MOZ_WIDGET_TOOLKIT'] == 'windows':
     ]
     UNIFIED_SOURCES += [
         'gfxDWriteFontList.cpp',
-    ]    
+    ]
     SOURCES += [
         'gfxDWriteCommon.cpp',
         'gfxDWriteFonts.cpp',
@@ -133,23 +165,14 @@ elif CONFIG['MOZ_WIDGET_TOOLKIT'] == 'windows':
         'PrintTargetWindows.cpp',
     ]
 
-# Are we targeting x86 or x64?  If so, build gfxAlphaRecoverySSE2.cpp.
 if CONFIG['INTEL_ARCHITECTURE']:
     SOURCES += ['gfxAlphaRecoverySSE2.cpp']
-    # The file uses SSE2 intrinsics, so it needs special compile flags on some
-    # compilers.
     SOURCES['gfxAlphaRecoverySSE2.cpp'].flags += CONFIG['SSE2_FLAGS']
 
 SOURCES += [
     'ContextStateTracker.cpp',
-    # Includes mac system header conflicting with point/size,
-    # and includes glxXlibSurface.h which drags in Xrender.h
     'gfxASurface.cpp',
-    # on X11, gfxDrawable.cpp includes X headers for an old workaround which
-    # we could consider removing soon (affects Ubuntus older than 10.04 LTS)
-    # which currently prevent it from joining UNIFIED_SOURCES.
     'gfxDrawable.cpp',
-    # gfxPlatform.cpp includes mac system header conflicting with point/size
     'gfxPlatform.cpp',
     'gfxPrefs.cpp',
     'PrintTarget.cpp',
@@ -200,7 +223,6 @@ elif CONFIG['MOZ_WIDGET_TOOLKIT'] == 'windows':
         'DeviceManagerDx.cpp',
     ]
 
-# We use ICU for normalization functions
 USE_LIBS += [
     'icu',
 ]
@@ -219,7 +241,7 @@ LOCAL_INCLUDES += [
     '/dom/xml',
 ]
 
-if CONFIG['MOZ_WIDGET_TOOLKIT'] in ('gtk2', 'gtk3'):
+if CONFIG['MOZ_WIDGET_TOOLKIT'] in ('gtk2', 'gtk3', 'motif'):
     DEFINES['MOZ_ENABLE_FREETYPE'] = True
 
 if CONFIG['MOZ_WIDGET_TOOLKIT'] == 'windows':
@@ -244,5 +266,4 @@ if CONFIG['GKMEDIAS_SHARED_LIBRARY']:
     DEFINES['OTS_DLL'] = True
 
 if CONFIG['CLANG_CXX']:
-    # Suppress warnings from Skia header files.
     SOURCES['gfxPlatform.cpp'].flags += ['-Wno-implicit-fallthrough']
