@@ -96,7 +96,7 @@ def toolkit_define(toolkit):
 set_define(toolkit_define, True)
 
 # Motif has no pkg-config module in the historical ABI we target.  Keep the
-# link set deliberately small and let the normal X checks discover the rest.
+# link set deliberately small and let old-configure publish TK_* into config.
 @depends(toolkit)
 def motif_tk_libs(toolkit):
     if toolkit == 'motif':
@@ -107,8 +107,6 @@ def motif_tk_cflags(toolkit):
     if toolkit == 'motif':
         return ()
 
-set_config('TK_LIBS', motif_tk_libs)
-set_config('TK_CFLAGS', motif_tk_cflags)
 add_old_configure_assignment('TK_LIBS', motif_tk_libs)
 add_old_configure_assignment('TK_CFLAGS', motif_tk_cflags)
 
@@ -129,8 +127,6 @@ def x11(value, toolkit):
 
 @depends(x11, toolkit)
 def xremote(x11, toolkit):
-    # The existing XRemote implementation is GTK-specific.  Motif has X11,
-    # but does not opt into that implementation yet.
     if x11 and toolkit in ('gtk2', 'gtk3'):
         return True
 
@@ -173,7 +169,6 @@ def gl_provider_define(provider):
 
 set_define(gl_provider_define, True)
 
-
 # PDF printing
 # ==============================================================
 @depends(toolkit)
@@ -191,7 +186,6 @@ def pdf_surface_feature(pdf_printing):
 set_config('MOZ_PDF_PRINTING', pdf_printing)
 set_config('PDF_SURFACE_FEATURE', pdf_surface_feature)
 
-
 # Event loop instrumentation
 # ==============================================================
 option(env='MOZ_INSTRUMENT_EVENT_LOOP',
@@ -207,8 +201,7 @@ set_define('MOZ_INSTRUMENT_EVENT_LOOP', instrument_event_loop)
 
 # Apple platform decoder support
 # ==============================================================
-option('--disable-apple-media',
-       help='Disable support for Apple Media')
+option('--disable-apple-media', help='Disable support for Apple Media')
 
 @depends('--disable-apple-media', toolkit)
 def applemedia(value, toolkit):
@@ -224,8 +217,7 @@ add_old_configure_assignment('MOZ_APPLEMEDIA', applemedia)
 
 # Windows Media Foundation support
 # ==============================================================
-option('--disable-wmf',
-       help='Disable support for Windows Media Foundation')
+option('--disable-wmf', help='Disable support for Windows Media Foundation')
 
 @depends('--disable-wmf', target)
 def wmf(value, target):
@@ -242,8 +234,7 @@ set_define('MOZ_WMF', wmf)
 
 # FFmpeg H264/AAC Decoding Support
 # ==============================================================
-option('--disable-ffmpeg',
-       help='Disable FFmpeg for fragmented H264/AAC decoding')
+option('--disable-ffmpeg', help='Disable FFmpeg for fragmented H264/AAC decoding')
 
 @depends('--disable-ffmpeg', target)
 def ffmpeg(value, target):
@@ -259,8 +250,7 @@ imply_option('--enable-fmp4', ffmpeg, '--enable-ffmpeg')
 
 # Built-in fragmented MP4 support.
 # ==============================================================
-option('--disable-fmp4', env='MOZ_FMP4',
-       help='Disable support for in built Fragmented MP4 parsing')
+option('--disable-fmp4', env='MOZ_FMP4', help='Disable support for in built Fragmented MP4 parsing')
 
 @depends('--disable-fmp4', target, wmf, applemedia)
 def fmp4(value, target, wmf, applemedia):
@@ -276,26 +266,20 @@ add_old_configure_assignment('MOZ_FMP4', fmp4)
 
 # Permissions system
 # ==============================================================
-option(name='--disable-permissions',
-       help='Disable permissions (popup and cookie blocking)')
-
+option(name='--disable-permissions', help='Disable permissions (popup and cookie blocking)')
 moz_permissions = depends_if('--disable-permissions')(lambda _: True)
-
 set_config('MOZ_PERMISSIONS', moz_permissions)
 set_define('MOZ_PERMISSIONS', moz_permissions)
 
 # gpsd support
 # ==============================================================
-option('--enable-gpsd', env='MOZ_GPSD',
-       help='Enable gpsd support')
+option('--enable-gpsd', env='MOZ_GPSD', help='Enable gpsd support')
 
 @depends('--enable-gpsd')
 def gpsd(value):
     return bool(value)
 
-system_gpsd = pkg_check_modules('MOZ_GPSD', 'libgps >= 3.11',
-                                when=gpsd)
-
+system_gpsd = pkg_check_modules('MOZ_GPSD', 'libgps >= 3.11', when=gpsd)
 set_config('MOZ_GPSD', depends_if(system_gpsd)(lambda _: True))
 
 # Miscellaneous programs
@@ -307,7 +291,6 @@ check_prog('ZIP', ('zip',))
 # Key files
 # ==============================================================
 include('../build/moz.configure/keyfiles.configure')
-
 simple_keyfile('Mozilla API')
 simple_keyfile('Google API')
 id_and_secret_keyfile('Bing API')
@@ -315,8 +298,7 @@ simple_keyfile('Adjust SDK')
 
 # Gecko integrated IPC fuzzer
 # ==============================================================
-option('--enable-ipc-fuzzer', env='MOZ_FAULTY',
-       help='Enable IPC fuzzer')
+option('--enable-ipc-fuzzer', env='MOZ_FAULTY', help='Enable IPC fuzzer')
 
 @depends('--enable-ipc-fuzzer', target)
 def ipc_fuzzer(value, target):
@@ -336,7 +318,6 @@ def ios_disable_printing(target):
         return False
 
 imply_option('--enable-printing', ios_disable_printing, reason='--target')
-
 option('--disable-printing', help='Disable printing support')
 
 @depends('--disable-printing')
@@ -357,11 +338,8 @@ def no_speechd_on_non_gtk(toolkit):
 
 imply_option('--enable-synth-speechd', no_speechd_on_non_gtk,
              reason='--enable-default-toolkit')
-
 option('--disable-synth-speechd', help='Disable speech-dispatcher support')
-
-set_config('MOZ_SYNTH_SPEECHD',
-           depends_if('--disable-synth-speechd')(lambda _: True))
+set_config('MOZ_SYNTH_SPEECHD', depends_if('--disable-synth-speechd')(lambda _: True))
 
 # Speech API
 # ==============================================================
@@ -379,9 +357,7 @@ add_old_configure_assignment('MOZ_WEBSPEECH', webspeech)
 # Enable IPDL's "expensive" unit tests
 # ==============================================================
 option('--enable-ipdl-tests', help='Enable expensive IPDL tests')
-
-set_config('MOZ_IPDL_TESTS',
-           depends_if('--enable-ipdl-tests')(lambda _: True))
+set_config('MOZ_IPDL_TESTS', depends_if('--enable-ipdl-tests')(lambda _: True))
 
 # Network protocol support
 # ==============================================================
@@ -424,7 +400,6 @@ def necko_protocols(protocols, default_protocols):
 
 imply_option('--enable-network-protocols', necko_protocols,
              reason='--enable-necko-protocols')
-
 option('--enable-network-protocols', nargs='+', default=default_necko_protocols,
        choices=all_necko_protocols,
        help='Enable/disable specific protocol handlers')
@@ -503,13 +478,11 @@ def skia_includes(skia, skia_gpu):
             '/gfx/skia/skia/include/config',
             '/gfx/skia/skia/include/core',
         ]
-
     if skia_gpu:
         includes += [
             '/gfx/skia/skia/include/gpu',
             '/gfx/skia/skia/include/utils',
         ]
-
     return includes
 
 set_config('SKIA_INCLUDES', skia_includes)
