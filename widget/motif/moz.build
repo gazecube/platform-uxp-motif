@@ -14,6 +14,10 @@ EXPORTS += [
     'nsWindow.h',
 ]
 
+EXPORTS.mozilla.widget += [
+    'X11CompositorWidget.h',
+]
+
 SOURCES += [
     'nsAppShell.cpp',
     'nsBidiKeyboard.cpp',
