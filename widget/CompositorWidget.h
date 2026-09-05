@@ -39,8 +39,11 @@ class CompositorWidgetInitData;
 // here.
 class CompositorWidgetDelegate;
 
-// Platforms that support out-of-process widgets.
-#if defined(XP_WIN) || defined(MOZ_X11)
+// Platforms that support out-of-process widgets.  Motif deliberately starts
+// with the generic in-process compositor: its native X11/Xt window is already
+// owned by the UI process and the GTK remote-compositor protocol is not part
+// of the Motif backend.
+#if defined(XP_WIN) || (defined(MOZ_X11) && !defined(MOZ_WIDGET_MOTIF))
 // CompositorWidgetParent should implement CompositorWidget and
 // PCompositorWidgetParent.
 class CompositorWidgetParent;
@@ -107,8 +110,6 @@ public:
 
   /**
    * Called after the LayerManager draws the layer tree
-   *
-   * Always called from the compositing thread.
    */
   virtual void DrawWindowOverlay(WidgetRenderingContext* aContext,
                                  LayoutDeviceIntRect aRect)
