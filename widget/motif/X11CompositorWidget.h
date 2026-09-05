@@ -10,6 +10,21 @@
 #include "nsIWidget.h"
 #include <X11/Xlib.h>
 
+#ifdef MOZ_WIDGET_MOTIF
+/*
+ * Shared GLX code historically names these through the GTK X11 backend.
+ * Motif exposes the same native X handles through nsIWidget directly.
+ */
+#ifndef NS_NATIVE_COMPOSITOR_DISPLAY
+#define NS_NATIVE_COMPOSITOR_DISPLAY NS_NATIVE_DISPLAY
+#endif
+#ifndef GET_NATIVE_WINDOW
+#define GET_NATIVE_WINDOW(aWidget) \
+  static_cast<Window>(reinterpret_cast<uintptr_t>( \
+    (aWidget)->GetNativeData(NS_NATIVE_WINDOW)))
+#endif
+#endif
+
 namespace mozilla {
 namespace widget {
 
