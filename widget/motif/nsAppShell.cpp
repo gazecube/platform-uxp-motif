@@ -4,6 +4,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "nsAppShell.h"
+#include "nsMotifDisplay.h"
 
 #include "mozilla/HangMonitor.h"
 #include "mozilla/Unused.h"
@@ -51,6 +52,12 @@ nsAppShell::GetAppContext()
 nsAppShell::GetDisplay()
 {
     return sDisplay;
+}
+
+Display*
+nsMotifGetDisplay()
+{
+    return nsAppShell::GetDisplay();
 }
 
 /* static */ void
