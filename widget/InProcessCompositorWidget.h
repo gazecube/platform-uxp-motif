@@ -5,14 +5,23 @@
 #ifndef mozilla_widget_InProcessCompositorWidget_h__
 #define mozilla_widget_InProcessCompositorWidget_h__
 
-#include "CompositorWidget.h"
+#ifdef MOZ_WIDGET_MOTIF
+#  include "mozilla/widget/X11CompositorWidget.h"
+#else
+#  include "CompositorWidget.h"
+#endif
 
 namespace mozilla {
 namespace widget {
 
 // This version of CompositorWidget implements a wrapper around
 // nsBaseWidget.
-class InProcessCompositorWidget : public CompositorWidget
+class InProcessCompositorWidget
+#ifdef MOZ_WIDGET_MOTIF
+  : public X11CompositorWidget
+#else
+  : public CompositorWidget
+#endif
 {
 public:
   explicit InProcessCompositorWidget(nsBaseWidget* aWidget);
