@@ -12,6 +12,9 @@
 #  include <gdk/gdk.h>
 #  include <gdk/gdkx.h>
 #  include "X11UndefineNone.h"
+#elif defined(MOZ_WIDGET_MOTIF)
+#  include <X11/Xlib.h>
+#  include "nsAppShell.h"
 #else
 #  error Unknown toolkit
 #endif
@@ -29,6 +32,8 @@ DefaultXDisplay()
 {
 #if defined(MOZ_WIDGET_GTK)
   return GDK_DISPLAY_XDISPLAY(gdk_display_get_default());
+#elif defined(MOZ_WIDGET_MOTIF)
+  return nsAppShell::GetDisplay();
 #endif
 }
 
