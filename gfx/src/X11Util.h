@@ -14,6 +14,7 @@
 #  include "X11UndefineNone.h"
 #elif defined(MOZ_WIDGET_MOTIF)
 #  include <X11/Xlib.h>
+#  include "X11UndefineNone.h"
 #  include "nsMotifDisplay.h"
 #else
 #  error Unknown toolkit
