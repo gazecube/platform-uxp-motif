@@ -29,7 +29,7 @@ public:
   {
     nsIWidget* widget = const_cast<X11CompositorWidget*>(this)->RealWidget();
     return widget
-      ? static_cast<Display*>(widget->GetNativeData(NS_NATIVE_COMPOSITOR_DISPLAY))
+      ? static_cast<Display*>(widget->GetNativeData(NS_NATIVE_DISPLAY))
       : nullptr;
   }
 
@@ -39,7 +39,7 @@ public:
     return widget
       ? static_cast<Window>(reinterpret_cast<uintptr_t>(
           widget->GetNativeData(NS_NATIVE_WINDOW)))
-      : None;
+      : static_cast<Window>(0);
   }
 
 protected:
