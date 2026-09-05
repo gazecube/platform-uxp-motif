@@ -8,6 +8,7 @@ EXPORTS += [
     'nsBidiKeyboard.h',
     'nsClipboard.h',
     'nsLookAndFeel.h',
+    'nsMotifDisplay.h',
     'nsScreenManagerMotif.h',
     'nsScreenMotif.h',
     'nsWindow.h',
