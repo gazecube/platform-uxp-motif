@@ -8,10 +8,12 @@
 
 #include "gfxContext.h"
 #include "gfxPlatform.h"
+#include "Layers.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/MouseEvents.h"
 #include "mozilla/TextEvents.h"
 #include "mozilla/widget/CompositorWidget.h"
+#include "mozilla/widget/PlatformWidgetTypes.h"
 #include "nsIWidgetListener.h"
 #include "nsIRollupListener.h"
 #include "nsMathUtils.h"
@@ -50,7 +52,7 @@ nsWindow::nsWindow()
   , mEnabled(true)
   , mTopLevel(false)
   , mModal(false)
-  , mNativeCursor(None)
+  , mNativeCursor(static_cast<Cursor>(0))
 {
   mWindowType = eWindowType_child;
 }
@@ -155,7 +157,6 @@ nsWindow::Destroy()
     mLayerManager = nullptr;
   }
   DestroyCompositor();
-  ClearCachedResources();
 
   Widget widget = mWidget;
   mWidget = nullptr;
@@ -214,7 +215,6 @@ nsWindow::Show(bool aState)
     } else {
       XtUnmanageChild(mWidget);
     }
-    ClearCachedResources();
   }
   return NS_OK;
 }
@@ -298,7 +298,7 @@ nsWindow::SetTitle(const nsAString& aTitle)
 }
 
 static unsigned int
-CursorShape(nsCursor aCursor)
+MotifCursorShape(nsCursor aCursor)
 {
   switch (aCursor) {
     case eCursor_wait: return XC_watch;
@@ -324,10 +324,10 @@ nsWindow::SetCursor(nsCursor aCursor)
   if (!mDisplay || !mWidget || !XtIsRealized(mWidget)) {
     return NS_OK;
   }
-  if (mNativeCursor != None) {
+  if (mNativeCursor != static_cast<Cursor>(0)) {
     XFreeCursor(mDisplay, mNativeCursor);
   }
-  mNativeCursor = XCreateFontCursor(mDisplay, CursorShape(aCursor));
+  mNativeCursor = XCreateFontCursor(mDisplay, MotifCursorShape(aCursor));
   XDefineCursor(mDisplay, XtWindow(mWidget), mNativeCursor);
   mCursor = aCursor;
   return NS_OK;
@@ -376,7 +376,7 @@ nsWindow::WidgetToScreenOffset()
   if (!mWidget || !XtIsRealized(mWidget)) {
     return mBounds.TopLeft();
   }
-  Position x = 0, y = 0;
+  ::Position x = 0, y = 0;
   XtTranslateCoords(mWidget, 0, 0, &x, &y);
   return LayoutDeviceIntPoint(x, y);
 }
@@ -483,7 +483,8 @@ nsWindow::CaptureMouse(bool aCapture)
   if (aCapture) {
     XGrabPointer(mDisplay, XtWindow(mWidget), True,
                  ButtonPressMask | ButtonReleaseMask | PointerMotionMask,
-                 GrabModeAsync, GrabModeAsync, None, None, CurrentTime);
+                 GrabModeAsync, GrabModeAsync,
+                 static_cast<Window>(0), static_cast<Cursor>(0), CurrentTime);
   } else {
     XUngrabPointer(mDisplay, CurrentTime);
   }
@@ -549,13 +550,17 @@ void
 nsWindow::GetCompositorWidgetInitData(
     mozilla::widget::CompositorWidgetInitData* aInitData)
 {
+  if (!aInitData) {
+    return;
+  }
   *aInitData = mozilla::widget::CompositorWidgetInitData();
 }
 
 Window
 nsWindow::XWindow() const
 {
-  return (mWidget && XtIsRealized(mWidget)) ? XtWindow(mWidget) : None;
+  return (mWidget && XtIsRealized(mWidget))
+         ? XtWindow(mWidget) : static_cast<Window>(0);
 }
 
 Display*
