@@ -17,7 +17,7 @@ public:
   nsresult Init();
 
 private:
-  ~nsClipboard() override;
+  ~nsClipboard();
   nsITransferable* TransferableFor(int32_t aWhichClipboard) const;
   nsIClipboardOwner* OwnerFor(int32_t aWhichClipboard) const;
   void SetSlot(int32_t aWhichClipboard, nsITransferable* aTransferable,
