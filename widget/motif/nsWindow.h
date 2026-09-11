@@ -68,6 +68,22 @@ public:
   void CaptureMouse(bool aCapture) override;
   void CaptureRollupEvents(nsIRollupListener* aListener, bool aDoCapture) override;
 
+  // UXP requires every concrete widget backend to provide these hooks.
+  // Motif does not yet have native IME/XIM plumbing, so the input-context
+  // methods intentionally expose the neutral context until that work lands.
+  nsresult ConfigureChildren(const nsTArray<Configuration>& aConfigurations) override
+  {
+    return NS_OK;
+  }
+  void SetInputContext(const InputContext& aContext,
+                       const InputContextAction& aAction) override
+  {
+  }
+  InputContext GetInputContext() override
+  {
+    return InputContext();
+  }
+
   already_AddRefed<mozilla::gfx::DrawTarget>
   StartRemoteDrawingInRegion(LayoutDeviceIntRegion& aInvalidRegion,
                              mozilla::layers::BufferMode* aBufferMode) override;
