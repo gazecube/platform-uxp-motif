@@ -45,6 +45,11 @@ LOCAL_INCLUDES += [
 DEFINES['CAIRO_GFX'] = True
 DEFINES['MOZ_X11'] = True
 
+# Motif draws directly through Cairo/Xlib and therefore needs Cairo's
+# public include flags just like the GTK widget backend does.
+CFLAGS += CONFIG['MOZ_CAIRO_CFLAGS']
+CXXFLAGS += CONFIG['MOZ_CAIRO_CFLAGS']
+
 CFLAGS += CONFIG['TK_CFLAGS']
 CXXFLAGS += CONFIG['TK_CFLAGS']
 OS_LIBS += CONFIG['TK_LIBS']
