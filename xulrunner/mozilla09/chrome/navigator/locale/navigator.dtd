@@ -1,0 +1,35 @@
+<!-- Minimal first-boot subset extracted from Mozilla 0.9 navigator.dtd. -->
+<!ENTITY brandShortName "Mozilla">
+<!ENTITY vendorShortName "Mozilla">
+<!ENTITY buildId.label "0.9">
+<!ENTITY mainWindow.title "&brandShortName; {&buildId.label;}">
+<!ENTITY mainWindow.titlemodifier "&brandShortName; {&buildId.label;}">
+<!ENTITY mainWindow.titlemodifiermenuseparator " - ">
+<!ENTITY menuBar.tooltip "Menu bar">
+<!ENTITY navigationBar.tooltip "Navigation toolbar">
+<!ENTITY backButton.label "Back">
+<!ENTITY backButton.tooltip "Go back one page">
+<!ENTITY forwardButton.label "Forward">
+<!ENTITY forwardButton.tooltip "Go forward one page">
+<!ENTITY reloadButton.label "Reload">
+<!ENTITY reloadButton.tooltip "Reload current page">
+<!ENTITY stopButton.label "Stop">
+<!ENTITY stopButton.tooltip "Stop loading this page">
+<!ENTITY locationBar.tooltip "Enter search term, keyword, or web address">
+<!ENTITY goButton.label "Go">
+<!ENTITY goButton.tooltip "Type a location in the field to the left, then click Go">
+<!ENTITY searchButton.label "Search">
+<!ENTITY searchButton.tooltip "Type a word in the field to the left, then click Search">
+<!ENTITY printButton.label "Print">
+<!ENTITY printButton.tooltip "Print this page">
+<!ENTITY printCmd.label "Print...">
+<!ENTITY printCmd.accesskey "p">
+<!ENTITY throbber.tooltip "Go to the &vendorShortName; home page">
+<!ENTITY personalBar.tooltip "Personal toolbar">
+<!ENTITY homeButton.label "Home">
+<!ENTITY bookmarksButton.label "Bookmarks">
+<!ENTITY addCurPageCmd.accesskey "b">
+<!ENTITY addCurPageAsCmd.accesskey "a">
+<!ENTITY manBookmarksCmd.accesskey "m">
+<!ENTITY emptyItem.label "(Empty)">
+<!ENTITY statusText.label "Document: Done">

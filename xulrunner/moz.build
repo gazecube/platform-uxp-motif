@@ -11,5 +11,11 @@ DIRS += [
     'examples',
 ]
 
+# The Motif backend is being exercised with the period Mozilla 0.9
+# Navigator chrome.  Stage that application beside xulrunner so the normal
+# `mach run` path finds application.ini without a special launcher.
+if CONFIG['MOZ_WIDGET_TOOLKIT'] == 'motif':
+    DIRS += ['mozilla09']
+
 if CONFIG['MAKENSISU']:
     DIRS += ['installer/windows']

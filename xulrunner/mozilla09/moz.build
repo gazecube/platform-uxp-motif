@@ -1,0 +1,21 @@
+# Mozilla 0.9 Navigator first-boot application for the Motif backend.
+# The XUL window is derived directly from xpfe/browser in
+# mozilla-source-0.9.tar.gz; see README.md for the compatibility edits.
+
+FINAL_TARGET_FILES += [
+    'application.ini',
+    'chrome.manifest',
+]
+
+FINAL_TARGET_FILES.defaults.preferences += [
+    'defaults/preferences/prefs.js',
+]
+
+FINAL_TARGET_FILES.chrome.navigator.content += [
+    'chrome/navigator/content/navigator.xul',
+]
+
+FINAL_TARGET_FILES.chrome.navigator.locale += [
+    'chrome/navigator/locale/navigator.dtd',
+    'chrome/navigator/locale/navigator.properties',
+]
