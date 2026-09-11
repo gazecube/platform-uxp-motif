@@ -181,6 +181,15 @@ if CONFIG['MOZ_WIDGET_TOOLKIT'] == 'motif':
         '-DgfxPlatformGtk=gfxPlatformMotif',
     ]
 
+    # gfxFcPlatformFontList.cpp is mostly toolkit-neutral, but this UXP
+    # revision hides two declarations it needs behind MOZ_WIDGET_GTK. Force a
+    # narrow compatibility header before the source rather than enabling GTK
+    # for the whole translation unit (which would drag in GDK headers).
+    SOURCES['gfxFcPlatformFontList.cpp'].flags += [
+        '-include',
+        'gfxMotifFontCompat.h',
+    ]
+
 UNIFIED_SOURCES += [
     'CJKCompatSVS.cpp',
     'gfxAlphaRecovery.cpp',
