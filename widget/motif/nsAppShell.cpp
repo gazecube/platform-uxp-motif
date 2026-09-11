@@ -45,12 +45,37 @@ nsAppShell::~nsAppShell()
 /* static */ XtAppContext
 nsAppShell::GetAppContext()
 {
+    // XRE may ask for the default X display before nsAppShell::Init() runs.
+    // Ensure the Xt application context/display pair exists as one shared
+    // singleton no matter which side of the startup sequence asks first.
+    GetDisplay();
     return sAppContext;
 }
 
 /* static */ Display*
 nsAppShell::GetDisplay()
 {
+    if (!sAppContext) {
+        XtToolkitInitialize();
+        sAppContext = XtCreateApplicationContext();
+        if (!sAppContext) {
+            return nullptr;
+        }
+    }
+
+    if (!sDisplay) {
+        int argc = 0;
+        char** argv = nullptr;
+        sDisplay = XtOpenDisplay(sAppContext, nullptr, nullptr,
+                                 const_cast<char*>("Mozilla"),
+                                 nullptr, 0, &argc, argv);
+        if (!sDisplay) {
+            XtDestroyApplicationContext(sAppContext);
+            sAppContext = nullptr;
+            return nullptr;
+        }
+    }
+
     return sDisplay;
 }
 
@@ -76,23 +101,8 @@ nsAppShell::EventProcessorCallback(XtPointer aClosure,
 nsresult
 nsAppShell::Init()
 {
-    if (!sAppContext) {
-        XtToolkitInitialize();
-        sAppContext = XtCreateApplicationContext();
-        if (!sAppContext) {
-            return NS_ERROR_FAILURE;
-        }
-
-        int argc = 0;
-        char** argv = nullptr;
-        sDisplay = XtOpenDisplay(sAppContext, nullptr, nullptr,
-                                 const_cast<char*>("Mozilla"),
-                                 nullptr, 0, &argc, argv);
-        if (!sDisplay) {
-            XtDestroyApplicationContext(sAppContext);
-            sAppContext = nullptr;
-            return NS_ERROR_FAILURE;
-        }
+    if (!GetDisplay()) {
+        return NS_ERROR_FAILURE;
     }
 
     if (pipe(mPipeFDs) != 0) {
