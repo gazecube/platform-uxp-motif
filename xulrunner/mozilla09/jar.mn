@@ -1,0 +1,6 @@
+mozilla09.jar:
+% content navigator %content/navigator/
+% locale navigator en-US %locale/en-US/navigator/
+  content/navigator/navigator.xul (chrome/navigator/content/navigator.xul)
+  locale/en-US/navigator/navigator.dtd (chrome/navigator/locale/navigator.dtd)
+  locale/en-US/navigator/navigator.properties (chrome/navigator/locale/navigator.properties)
