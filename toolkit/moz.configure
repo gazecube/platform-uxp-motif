@@ -481,3 +481,19 @@ def dav1d(value):
 
 set_config('MOZ_DAV1D', dav1d)
 set_define('MOZ_DAV1D', dav1d)
+
+# Graphics
+# ==============================================================
+# Restore the long-standing Skia configure switch. The build graph still
+# consumes MOZ_ENABLE_SKIA in multiple places, so keep the user-facing control
+# available instead of hard-coding Skia policy into individual toolkits.
+option('--disable-skia', help='Disable use of Skia')
+
+@depends('--disable-skia', target)
+def skia(value, target):
+    if value:
+        return True
+
+set_config('MOZ_ENABLE_SKIA', skia)
+set_define('MOZ_ENABLE_SKIA', skia)
+set_define('USE_SKIA', skia)
