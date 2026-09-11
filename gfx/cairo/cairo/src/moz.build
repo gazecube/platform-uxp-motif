@@ -70,7 +70,11 @@ elif CONFIG['MOZ_WIDGET_TOOLKIT'] == 'beos':
     SOURCES += [
         'cairo-beos-surface.cpp',
     ]
-elif 'gtk' in CONFIG['MOZ_WIDGET_TOOLKIT']:
+elif 'gtk' in CONFIG['MOZ_WIDGET_TOOLKIT'] or CONFIG['MOZ_WIDGET_TOOLKIT'] == 'motif':
+    # Motif uses UXP's bundled Cairo just like the Unix GTK backends.  Export
+    # and build the PS surface here so the generated system-wrapper for
+    # cairo-ps.h resolves to dist/include/cairo instead of requiring a second,
+    # system Cairo installation.
     EXPORTS.cairo += [
         'cairo-ps.h',
     ]
@@ -164,7 +168,6 @@ UNIFIED_SOURCES += [
     'cairo-surface-snapshot.c',
     'cairo-surface-subsurface.c',
     'cairo-surface.c',
-    'cairo-tee-surface.c',
     'cairo-tor-scan-converter.c',
     'cairo-toy-font-face.c',
     'cairo-traps.c',
@@ -172,94 +175,13 @@ UNIFIED_SOURCES += [
     'cairo-user-font.c',
     'cairo-version.c',
     'cairo-wideint.c',
-    'cairo.c',
 ]
 
-# We allow warnings for third-party code that can be updated from upstream.
-ALLOW_COMPILER_WARNINGS = True
+LOCAL_INCLUDES += [
+    '../../../2d',
+]
 
 FINAL_LIBRARY = 'gkmedias'
 
-DEFINES['PACKAGE_VERSION'] = '"moz"'
-DEFINES['PACKAGE_BUGREPORT'] = '"http://bugzilla.mozilla.org/"'
-
-for var in ('CAIRO_HAS_PTHREAD', '_GNU_SOURCE'):
-    DEFINES[var] = True
-
-for var in ('MOZ_TREE_CAIRO', 'MOZ_TREE_PIXMAN'):
-    if CONFIG[var]:
-        DEFINES[var] = True
-
 if CONFIG['GNU_CC']:
-    DEFINES['HAVE_CXX11_ATOMIC_PRIMITIVES'] = True
-    # We would normally use autoconf to set these up, using AC_CHECK_SIZEOF.
-    # But AC_CHECK_SIZEOF requires running programs to determine the sizes,
-    # and that doesn't work so well with cross-compiling.  So instead we
-    # use these magic macros, available since at least GCC 4.3, to define
-    # the preprocessor macros cairo wanted from autoconf.
-    DEFINES['SIZEOF_VOID_P'] = '__SIZEOF_POINTER__'
-    DEFINES['SIZEOF_INT'] = '__SIZEOF_INT__'
-    DEFINES['SIZEOF_LONG'] = '__SIZEOF_LONG__'
-    DEFINES['SIZEOF_LONG_LONG'] = '__SIZEOF_LONG_LONG__'
-
-# Normally determined by cairo's configure script.
-DEFINES['HAVE_UINT64_T'] = True
-
-if CONFIG['MOZ_TREE_FREETYPE']:
-    DEFINES['HAVE_FT_LIBRARY_SETLCDFILTER'] = True
-    DEFINES['FT_LCD_FILTER_H'] = '%s/modules/freetype2/include/freetype/ftlcdfil.h' % TOPSRCDIR
-
-# Suppress warnings in third-party code.
-if CONFIG['_MSC_VER']:
-    CFLAGS += [
-        '-wd4005', # 'WIN32_LEAN_AND_MEAN' : macro redefinition
-        '-wd4018', # '>' : signed/unsigned mismatch
-        '-wd4047', # different levels of indirection
-        '-wd4101', # unreferenced local variable
-        '-wd4133', # 'function' : incompatible types
-        '-wd4146', # unary minus operator applied to unsigned type
-        '-wd4311', # 'variable' : pointer truncation from 'type' to 'type'
-        '-wd4477', # format string '%s' requires an argument of type 'type'
-        '-wd4996', # The compiler encountered a deprecated declaration.
-        '-wd5286', # implicit conversion between enum types
-        '-wd5287', # operands are different enum types
-    ]
-    CXXFLAGS += [
-        '-wd4005', # 'WIN32_LEAN_AND_MEAN' : macro redefinition
-        '-wd4018', # '>' : signed/unsigned mismatch
-        '-wd4146', # unary minus operator applied to unsigned type
-        '-wd4828', # illegal in the current source character set
-        '-wd4838', # requires a narrowing conversion
-]
-if CONFIG['GNU_CC'] or CONFIG['CLANG_CL']:
-    CFLAGS += [
-        '-Wno-enum-compare',
-        '-Wno-int-to-pointer-cast',
-        '-Wno-sign-compare',
-        '-Wno-type-limits',
-        '-Wno-missing-field-initializers',
-        '-Wno-conversion',
-        '-Wno-unused-but-set-variable',
-    ]
-
-if CONFIG['CLANG_CXX'] or CONFIG['CLANG_CL']:
-    CFLAGS += [
-        '-Wno-incompatible-pointer-types',
-        '-Wno-tautological-compare',
-        '-Wno-tautological-constant-out-of-range-compare',
-        '-Wno-error=uninitialized',
-    ]
-
-if CONFIG['CLANG_CL']:
-    CFLAGS += [
-        '-Wno-deprecated-register',
-        '-Wno-macro-redefined',
-        '-Wno-unused-variable',
-    ]
-
-if CONFIG['MOZ_X11']:
-    CFLAGS += CONFIG['XCFLAGS']
-
-if CONFIG['MOZ_ENABLE_CAIRO_FT']:
-    CFLAGS += CONFIG['CAIRO_FT_CFLAGS']
-    CXXFLAGS += CONFIG['CAIRO_FT_CFLAGS']
+    CFLAGS += ['-Wno-enum-compare']
