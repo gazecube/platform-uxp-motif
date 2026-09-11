@@ -60,6 +60,15 @@ SOURCES += [
     'ProfileReset.cpp',
 ]
 
+if CONFIG['MOZ_X11']:
+    # nsAppRunner.cpp calls XInitThreads() for every X11 backend. GTK used to
+    # provide the Xlib declaration indirectly through GDK, but non-GTK X11
+    # backends such as Motif need the generic Xlib declaration explicitly.
+    SOURCES['nsAppRunner.cpp'].flags += [
+        '-include',
+        'X11/Xlib.h',
+    ]
+
 if CONFIG['MOZ_INSTRUMENT_EVENT_LOOP']:
     UNIFIED_SOURCES += [
         'EventTracer.cpp',
