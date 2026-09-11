@@ -4,10 +4,12 @@
 
 #include "nsClipboard.h"
 
+#include "nsArrayUtils.h"
 #include "nsIArray.h"
 #include "nsISupportsPrimitives.h"
 #include "nsITransferable.h"
 #include "nsIClipboardOwner.h"
+#include "nsString.h"
 
 NS_IMPL_ISUPPORTS(nsClipboard, nsIClipboard)
 
