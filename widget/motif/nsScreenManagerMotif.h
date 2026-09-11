@@ -16,7 +16,7 @@ public:
   NS_DECL_NSISCREENMANAGER
 
 private:
-  ~nsScreenManagerMotif() override = default;
+  ~nsScreenManagerMotif() = default;
   nsresult EnsureInit();
   nsCOMArray<nsIScreen> mScreens;
 };
