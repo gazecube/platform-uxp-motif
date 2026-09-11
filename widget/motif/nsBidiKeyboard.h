@@ -14,7 +14,7 @@ public:
   NS_DECL_ISUPPORTS
   NS_DECL_NSIBIDIKEYBOARD
 private:
-  ~nsBidiKeyboard() override = default;
+  ~nsBidiKeyboard() = default;
 };
 
 #endif
