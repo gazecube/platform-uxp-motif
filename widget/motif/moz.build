@@ -53,3 +53,22 @@ CXXFLAGS += CONFIG['MOZ_CAIRO_CFLAGS']
 
 CFLAGS += CONFIG['TK_CFLAGS']
 CXXFLAGS += CONFIG['TK_CFLAGS']
+
+# Mozilla builds its own objects with hidden visibility.  Motif's public
+# headers expose data symbols such as _XmStrings; keeping hidden visibility
+# on references to those DSO-owned symbols makes gold require a local
+# definition.  Limit the override to this backend's objects.
+CXXFLAGS += ['-fvisibility=default']
+
+# Unlike GTK/Pango, Motif does not pull the rest of the Unix graphics stack
+# into libxul transitively.  Keep the toolkit libraries and add the direct
+# dependencies used by the X11 shared-memory and Fontconfig/FreeType paths.
+OS_LIBS += CONFIG['TK_LIBS']
+OS_LIBS += [
+    'fontconfig',
+    'freetype',
+    'X11-xcb',
+    'xcb',
+    'xcb-shm',
+    'Xext',
+]
