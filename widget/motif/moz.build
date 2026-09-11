@@ -28,6 +28,7 @@ SOURCES += [
     'nsScreenMotif.cpp',
     'nsWidgetFactory.cpp',
     'nsWindow.cpp',
+    'WidgetTraceEvent.cpp',
 ]
 
 include('/ipc/chromium/chromium-config.mozbuild')
@@ -52,4 +53,3 @@ CXXFLAGS += CONFIG['MOZ_CAIRO_CFLAGS']
 
 CFLAGS += CONFIG['TK_CFLAGS']
 CXXFLAGS += CONFIG['TK_CFLAGS']
-OS_LIBS += CONFIG['TK_LIBS']
