@@ -1,0 +1,9 @@
+FINAL_TARGET_FILES += [
+    'application.ini',
+]
+
+FINAL_TARGET_FILES.defaults.preferences += [
+    'defaults/preferences/prefs.js',
+]
+
+JAR_MANIFESTS += ['jar.mn']
