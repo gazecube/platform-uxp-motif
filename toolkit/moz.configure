@@ -95,8 +95,18 @@ def toolkit_define(toolkit):
 
 set_define(toolkit_define, True)
 
-# Motif has no pkg-config module in the historical ABI we target.  Keep the
-# link set deliberately small and let old-configure publish TK_* into config.
+# Motif has no pkg-config module in the historical ABI we target. Keep the
+# Motif/Xt link set deliberately small and let old-configure publish TK_* into
+# config. Cairo itself does have a pkg-config module, though, and the bundled
+# Cairo wrapper headers use include_next for optional backends such as PS/PDF.
+# Discover its system include path independently so Motif builds can find
+# headers such as /usr/include/cairo/cairo-ps.h without hard-coding a path.
+@depends(toolkit)
+def motif_enabled(toolkit):
+    return toolkit == 'motif'
+
+pkg_check_modules('MOTIF_CAIRO', 'cairo', when=motif_enabled)
+
 @depends(toolkit)
 def motif_tk_libs(toolkit):
     if toolkit == 'motif':
@@ -262,227 +272,210 @@ def fmp4(value, target, wmf, applemedia):
 
 set_config('MOZ_FMP4', fmp4)
 set_define('MOZ_FMP4', fmp4)
-add_old_configure_assignment('MOZ_FMP4', fmp4)
 
-# Permissions system
+# PulseAudio support
 # ==============================================================
-option(name='--disable-permissions', help='Disable permissions (popup and cookie blocking)')
-moz_permissions = depends_if('--disable-permissions')(lambda _: True)
-set_config('MOZ_PERMISSIONS', moz_permissions)
-set_define('MOZ_PERMISSIONS', moz_permissions)
+option('--enable-pulseaudio', env='MOZ_PULSEAUDIO',
+       help='Enable PulseAudio support.')
 
-# gpsd support
-# ==============================================================
-option('--enable-gpsd', env='MOZ_GPSD', help='Enable gpsd support')
-
-@depends('--enable-gpsd')
-def gpsd(value):
-    return bool(value)
-
-system_gpsd = pkg_check_modules('MOZ_GPSD', 'libgps >= 3.11', when=gpsd)
-set_config('MOZ_GPSD', depends_if(system_gpsd)(lambda _: True))
-
-# Miscellaneous programs
-# ==============================================================
-check_prog('TAR', ('gnutar', 'gtar', 'tar'))
-check_prog('UNZIP', ('unzip',))
-check_prog('ZIP', ('zip',))
-
-# Key files
-# ==============================================================
-include('../build/moz.configure/keyfiles.configure')
-simple_keyfile('Mozilla API')
-simple_keyfile('Google API')
-id_and_secret_keyfile('Bing API')
-simple_keyfile('Adjust SDK')
-
-# Gecko integrated IPC fuzzer
-# ==============================================================
-option('--enable-ipc-fuzzer', env='MOZ_FAULTY', help='Enable IPC fuzzer')
-
-@depends('--enable-ipc-fuzzer', target)
-def ipc_fuzzer(value, target):
-    if value:
-        if target.os == 'WINNT':
-            die('--enable-ipc-fuzzer is not supported on this platform.')
-        return bool(value)
-
-set_config('MOZ_FAULTY', ipc_fuzzer)
-set_define('MOZ_FAULTY', ipc_fuzzer)
-
-# Printing
-# ==============================================================
-@depends(target)
-def ios_disable_printing(target):
-    if target.os == 'iOS':
-        return False
-
-imply_option('--enable-printing', ios_disable_printing, reason='--target')
-option('--disable-printing', help='Disable printing support')
-
-@depends('--disable-printing')
-def printing(value):
+@depends('--enable-pulseaudio')
+def pulseaudio(value):
     if value:
         return True
 
-set_config('NS_PRINTING', printing)
-set_define('NS_PRINTING', printing)
-set_define('NS_PRINT_PREVIEW', printing)
+set_config('MOZ_PULSEAUDIO', pulseaudio)
+set_define('MOZ_PULSEAUDIO', pulseaudio)
 
-# Speech-dispatcher support
+# ALSA support
 # ==============================================================
-@depends(toolkit)
-def no_speechd_on_non_gtk(toolkit):
-    if toolkit not in ('gtk2', 'gtk3'):
-        return False
+option('--enable-alsa', env='MOZ_ALSA',
+       help='Enable ALSA support.')
 
-imply_option('--enable-synth-speechd', no_speechd_on_non_gtk,
-             reason='--enable-default-toolkit')
-option('--disable-synth-speechd', help='Disable speech-dispatcher support')
-set_config('MOZ_SYNTH_SPEECHD', depends_if('--disable-synth-speechd')(lambda _: True))
-
-# Speech API
-# ==============================================================
-option('--disable-webspeech', help='Disable support for HTML Speech synthesis API')
-
-@depends('--disable-webspeech', '--help')
-def webspeech(value, _):
+@depends('--enable-alsa')
+def alsa(value):
     if value:
         return True
 
-set_config('MOZ_WEBSPEECH', webspeech)
-set_define('MOZ_WEBSPEECH', webspeech)
-add_old_configure_assignment('MOZ_WEBSPEECH', webspeech)
+set_config('MOZ_ALSA', alsa)
+set_define('MOZ_ALSA', alsa)
 
-# Enable IPDL's "expensive" unit tests
+# EME support
 # ==============================================================
-option('--enable-ipdl-tests', help='Enable expensive IPDL tests')
-set_config('MOZ_IPDL_TESTS', depends_if('--enable-ipdl-tests')(lambda _: True))
+option('--enable-eme', env='MOZ_EME', help='Enable EME support')
 
-# Network protocol support
-# ==============================================================
-@depends(check_build_environment, toolkit_gtk, '--help')
-@imports('os')
-@imports(_from='__builtin__', _import='sorted')
-def all_necko_protocols(build_env, toolkit_gtk, _):
-    basedir = os.path.join(build_env.topsrcdir, 'netwerk', 'protocol')
-    return tuple(sorted(p for p in os.listdir(basedir)
-                        if (os.path.isdir(os.path.join(basedir, p)) and
-                            (p != 'gio' or toolkit_gtk))))
-
-default_necko_protocols = all_necko_protocols
-
-@deprecated_option('--enable-necko-protocols', nargs='*')
-def necko_protocols(protocols):
-    return protocols
-
-@depends(necko_protocols, default_necko_protocols)
-def necko_protocols(protocols, default_protocols):
-    if protocols is None or (protocols and len(protocols) == 0):
-        return None
-    if len(protocols) == 1 and protocols[0] == '':
-        return False
-    result = set()
-    for p in protocols:
-        if p in ('yes', 'all', 'default'):
-            result |= set(default_protocols)
-            continue
-        if p in ('no', 'none'):
-            result = set()
-            continue
-        if p.startswith('-'):
-            if p[1:] in result:
-                result.remove(p[1:])
-        else:
-            result.add(p)
-    if result != set(default_protocols):
-        return tuple(result)
-
-imply_option('--enable-network-protocols', necko_protocols,
-             reason='--enable-necko-protocols')
-option('--enable-network-protocols', nargs='+', default=default_necko_protocols,
-       choices=all_necko_protocols,
-       help='Enable/disable specific protocol handlers')
-
-@depends('--enable-network-protocols')
-def necko_protocol_defines(protocols):
-    return tuple('NECKO_PROTOCOL_%s' % p for p in protocols)
-
-add_old_configure_assignment('_NON_GLOBAL_ACDEFINES', necko_protocol_defines)
-
-@depends(necko_protocol_defines)
-@imports('__sandbox__')
-def set_necko_protocol_defines(protocols):
-    for p in protocols:
-        __sandbox__.set_define_impl(p, True)
-
-@depends('--enable-network-protocols')
-@imports(_from='__builtin__', _import='sorted')
-def necko_protocols(protocols):
-    return tuple(sorted(protocols))
-
-set_config('NECKO_PROTOCOLS', necko_protocols)
-add_old_configure_assignment('NECKO_PROTOCOLS', necko_protocols)
-
-# Graphics
-# ==============================================================
-option('--disable-skia', help='Disable use of Skia')
-
-@depends('--disable-skia', target)
-def skia(value, target):
+@depends('--enable-eme')
+def eme(value):
     if value:
         return True
 
-set_config('MOZ_ENABLE_SKIA', skia)
-set_define('MOZ_ENABLE_SKIA', skia)
-set_define('USE_SKIA', skia)
+set_config('MOZ_EME', eme)
+set_define('MOZ_EME', eme)
 
-option('--disable-skia-gpu', help='Disable use of Skia-GPU')
+# WebRTC
+# ==============================================================
+option('--disable-webrtc', help='Disable WebRTC support')
 
-@depends('--disable-skia-gpu', skia, target)
-def skia_gpu(value, skia, target):
-    if value.origin == 'default':
-        if not skia:
-            return None
-        if target.os in ('NetBSD', 'OpenBSD'):
-            return None
-    elif value and not skia:
-        die('Cannot enable Skia-GPU without enabling Skia')
-    if skia and value:
+@depends('--disable-webrtc')
+def webrtc(value):
+    if value:
         return True
 
-set_config('MOZ_ENABLE_SKIA_GPU', skia_gpu)
-set_define('USE_SKIA_GPU', skia_gpu)
+set_config('MOZ_WEBRTC', webrtc)
+set_define('MOZ_WEBRTC', webrtc)
 
-option('--enable-skia-pdf', help='Enable Skia PDF')
+# SMIL
+# ==============================================================
+option('--disable-smil', help='Disable SMIL support')
 
-@depends('--enable-skia-pdf', skia, target)
-def skia_pdf(value, skia, target):
-    if value.origin == 'default':
-        if not skia:
-            return None
-    elif value and not skia:
-        die('Cannot enable Skia PDF without enabling Skia')
-    if skia and value:
+@depends('--disable-smil')
+def smil(value):
+    if value:
         return True
 
-set_config('MOZ_ENABLE_SKIA_PDF', skia_pdf)
-set_define('MOZ_ENABLE_SKIA_PDF', skia_pdf)
+set_config('MOZ_SMIL', smil)
+set_define('MOZ_SMIL', smil)
 
-@depends(skia, skia_gpu)
-def skia_includes(skia, skia_gpu):
-    includes = []
-    if skia:
-        includes += [
-            '/gfx/skia',
-            '/gfx/skia/skia/include/config',
-            '/gfx/skia/skia/include/core',
-        ]
-    if skia_gpu:
-        includes += [
-            '/gfx/skia/skia/include/gpu',
-            '/gfx/skia/skia/include/utils',
-        ]
-    return includes
+# raw media
+# ==============================================================
+option('--disable-raw', help='Disable support for RAW media')
 
-set_config('SKIA_INCLUDES', skia_includes)
+@depends('--disable-raw')
+def raw(value):
+    if value:
+        return True
+
+set_config('MOZ_RAW', raw)
+set_define('MOZ_RAW', raw)
+
+# Ogg
+# ==============================================================
+option('--disable-ogg', help='Disable Ogg support')
+
+@depends('--disable-ogg')
+def ogg(value):
+    if value:
+        return True
+
+set_config('MOZ_OGG', ogg)
+set_define('MOZ_OGG', ogg)
+
+# Opus
+# ==============================================================
+option('--disable-opus', help='Disable Opus support')
+
+@depends('--disable-opus')
+def opus(value):
+    if value:
+        return True
+
+set_config('MOZ_OPUS', opus)
+set_define('MOZ_OPUS', opus)
+
+# Vorbis
+# ==============================================================
+option('--disable-vorbis', help='Disable Vorbis support')
+
+@depends('--disable-vorbis')
+def vorbis(value):
+    if value:
+        return True
+
+set_config('MOZ_VORBIS', vorbis)
+set_define('MOZ_VORBIS', vorbis)
+
+# WebM
+# ==============================================================
+option('--disable-webm', env='MOZ_WEBM', help='Disable WebM support')
+
+@depends('--disable-webm')
+def webm(value):
+    if value:
+        return True
+
+set_config('MOZ_WEBM', webm)
+set_define('MOZ_WEBM', webm)
+
+# VPX
+# ==============================================================
+option('--disable-vpx', env='MOZ_VPX', help='Disable VPX support')
+
+@depends('--disable-vpx')
+def vpx(value):
+    if value:
+        return True
+
+set_config('MOZ_VPX', vpx)
+set_define('MOZ_VPX', vpx)
+
+# Wave
+# ==============================================================
+option('--disable-wave', env='MOZ_WAVE', help='Disable Wave support')
+
+@depends('--disable-wave')
+def wave(value):
+    if value:
+        return True
+
+set_config('MOZ_WAVE', wave)
+set_define('MOZ_WAVE', wave)
+
+# Theora
+# ==============================================================
+option('--disable-theora', env='MOZ_THEORA', help='Disable Theora support')
+
+@depends('--disable-theora')
+def theora(value):
+    if value:
+        return True
+
+set_config('MOZ_THEORA', theora)
+set_define('MOZ_THEORA', theora)
+
+# libcubeb
+# ==============================================================
+option('--disable-cubeb', env='MOZ_CUBEB', help='Disable libcubeb')
+
+@depends('--disable-cubeb')
+def cubeb(value):
+    if value:
+        return True
+
+set_config('MOZ_CUBEB', cubeb)
+set_define('MOZ_CUBEB', cubeb)
+
+# libcubeb remoting
+# ==============================================================
+option('--enable-cubeb-remoting', env='MOZ_CUBEB_REMOTING',
+       help='Enable cubeb remoting')
+
+@depends('--enable-cubeb-remoting')
+def cubeb_remoting(value):
+    if value:
+        return True
+
+set_config('MOZ_CUBEB_REMOTING', cubeb_remoting)
+set_define('MOZ_CUBEB_REMOTING', cubeb_remoting)
+
+# ffvpx
+# ==============================================================
+option('--disable-ffvpx', env='MOZ_FFVPX', help='Disable ffvpx')
+
+@depends('--disable-ffvpx')
+def ffvpx(value):
+    if value:
+        return True
+
+set_config('MOZ_FFVPX', ffvpx)
+set_define('MOZ_FFVPX', ffvpx)
+
+# dav1d
+# ==============================================================
+option('--disable-dav1d', env='MOZ_DAV1D', help='Disable dav1d')
+
+@depends('--disable-dav1d')
+def dav1d(value):
+    if value:
+        return True
+
+set_config('MOZ_DAV1D', dav1d)
+set_define('MOZ_DAV1D', dav1d)
