@@ -352,11 +352,11 @@ gfxPlatformMotif::GetPlatformCMSOutputProfile(void*& aMem, size_t& aSize)
     }
 
     Atom profile = XInternAtom(dpy, "_ICC_PROFILE", True);
-    if (profile == None) {
+    if (profile == static_cast<Atom>(0)) {
         return;
     }
 
-    Atom actualType = None;
+    Atom actualType = static_cast<Atom>(0);
     int actualFormat = 0;
     unsigned long nitems = 0;
     unsigned long bytesAfter = 0;
