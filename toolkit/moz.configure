@@ -482,11 +482,183 @@ def dav1d(value):
 set_config('MOZ_DAV1D', dav1d)
 set_define('MOZ_DAV1D', dav1d)
 
+# Permissions system
+# ==============================================================
+option(name='--disable-permissions',
+       help='Disable permissions (popup and cookie blocking)')
+
+moz_permissions = depends_if('--disable-permissions')(lambda _: True)
+
+set_config('MOZ_PERMISSIONS', moz_permissions)
+set_define('MOZ_PERMISSIONS', moz_permissions)
+
+# gpsd support
+# ==============================================================
+option('--enable-gpsd', env='MOZ_GPSD',
+       help='Enable gpsd support')
+
+@depends('--enable-gpsd')
+def gpsd(value):
+    return bool(value)
+
+system_gpsd = pkg_check_modules('MOZ_GPSD', 'libgps >= 3.11',
+                                when=gpsd)
+
+set_config('MOZ_GPSD', depends_if(system_gpsd)(lambda _: True))
+
+# Miscellaneous programs
+# ==============================================================
+check_prog('TAR', ('gnutar', 'gtar', 'tar'))
+check_prog('UNZIP', ('unzip',))
+check_prog('ZIP', ('zip',))
+
+# Key files
+# ==============================================================
+include('../build/moz.configure/keyfiles.configure')
+
+simple_keyfile('Mozilla API')
+simple_keyfile('Google API')
+id_and_secret_keyfile('Bing API')
+simple_keyfile('Adjust SDK')
+
+# Gecko integrated IPC fuzzer
+# ==============================================================
+option('--enable-ipc-fuzzer', env='MOZ_FAULTY',
+       help='Enable IPC fuzzer')
+
+@depends('--enable-ipc-fuzzer', target)
+def ipc_fuzzer(value, target):
+    if value:
+        if target.os == 'WINNT':
+            die('--enable-ipc-fuzzer is not supported on this platform.')
+        return bool(value)
+
+set_config('MOZ_FAULTY', ipc_fuzzer)
+set_define('MOZ_FAULTY', ipc_fuzzer)
+
+# Printing
+# ==============================================================
+@depends(target)
+def ios_disable_printing(target):
+    if target.os == 'iOS':
+        return False
+
+imply_option('--enable-printing', ios_disable_printing, reason='--target')
+
+option('--disable-printing', help='Disable printing support')
+
+@depends('--disable-printing')
+def printing(value):
+    if value:
+        return True
+
+set_config('NS_PRINTING', printing)
+set_define('NS_PRINTING', printing)
+set_define('NS_PRINT_PREVIEW', printing)
+
+# Speech-dispatcher support
+# ==============================================================
+@depends(toolkit)
+def no_speechd_on_non_gtk(toolkit):
+    if toolkit not in ('gtk2', 'gtk3'):
+        return False
+
+imply_option('--enable-synth-speechd', no_speechd_on_non_gtk,
+             reason='--enable-default-toolkit')
+
+option('--disable-synth-speechd', help='Disable speech-dispatcher support')
+
+set_config('MOZ_SYNTH_SPEECHD',
+           depends_if('--disable-synth-speechd')(lambda _: True))
+
+# Speech API
+# ==============================================================
+option('--disable-webspeech', help='Disable support for HTML Speech synthesis API')
+
+@depends('--disable-webspeech', '--help')
+def webspeech(value, _):
+    if value:
+        return True
+
+set_config('MOZ_WEBSPEECH', webspeech)
+set_define('MOZ_WEBSPEECH', webspeech)
+add_old_configure_assignment('MOZ_WEBSPEECH', webspeech)
+
+# Enable IPDL's "expensive" unit tests
+# ==============================================================
+option('--enable-ipdl-tests', help='Enable expensive IPDL tests')
+
+set_config('MOZ_IPDL_TESTS',
+           depends_if('--enable-ipdl-tests')(lambda _: True))
+
+# Network protocol support
+# ==============================================================
+@depends(check_build_environment, toolkit_gtk, '--help')
+@imports('os')
+@imports(_from='__builtin__', _import='sorted')
+def all_necko_protocols(build_env, toolkit_gtk, _):
+    basedir = os.path.join(build_env.topsrcdir, 'netwerk', 'protocol')
+    return tuple(sorted(p for p in os.listdir(basedir)
+                        if (os.path.isdir(os.path.join(basedir, p)) and
+                            (p != 'gio' or toolkit_gtk))))
+
+default_necko_protocols = all_necko_protocols
+
+@deprecated_option('--enable-necko-protocols', nargs='*')
+def necko_protocols(protocols):
+    return protocols
+
+@depends(necko_protocols, default_necko_protocols)
+def necko_protocols(protocols, default_protocols):
+    if protocols is None or (protocols and len(protocols) == 0):
+        return None
+    if len(protocols) == 1 and protocols[0] == '':
+        return False
+    result = set()
+    for p in protocols:
+        if p in ('yes', 'all', 'default'):
+            result |= set(default_protocols)
+            continue
+        if p in ('no', 'none'):
+            result = set()
+            continue
+        if p.startswith('-'):
+            if p[1:] in result:
+                result.remove(p[1:])
+        else:
+            result.add(p)
+    if result != set(default_protocols):
+        return tuple(result)
+
+imply_option('--enable-network-protocols', necko_protocols,
+             reason='--enable-necko-protocols')
+
+option('--enable-network-protocols', nargs='+', default=default_necko_protocols,
+       choices=all_necko_protocols,
+       help='Enable/disable specific protocol handlers')
+
+@depends('--enable-network-protocols')
+def necko_protocol_defines(protocols):
+    return tuple('NECKO_PROTOCOL_%s' % p for p in protocols)
+
+add_old_configure_assignment('_NON_GLOBAL_ACDEFINES', necko_protocol_defines)
+
+@depends(necko_protocol_defines)
+@imports('__sandbox__')
+def set_necko_protocol_defines(protocols):
+    for p in protocols:
+        __sandbox__.set_define_impl(p, True)
+
+@depends('--enable-network-protocols')
+@imports(_from='__builtin__', _import='sorted')
+def necko_protocols(protocols):
+    return tuple(sorted(protocols))
+
+set_config('NECKO_PROTOCOLS', necko_protocols)
+add_old_configure_assignment('NECKO_PROTOCOLS', necko_protocols)
+
 # Graphics
 # ==============================================================
-# Restore the long-standing Skia configure switch. The build graph still
-# consumes MOZ_ENABLE_SKIA in multiple places, so keep the user-facing control
-# available instead of hard-coding Skia policy into individual toolkits.
 option('--disable-skia', help='Disable use of Skia')
 
 @depends('--disable-skia', target)
@@ -497,3 +669,53 @@ def skia(value, target):
 set_config('MOZ_ENABLE_SKIA', skia)
 set_define('MOZ_ENABLE_SKIA', skia)
 set_define('USE_SKIA', skia)
+
+option('--disable-skia-gpu', help='Disable use of Skia-GPU')
+
+@depends('--disable-skia-gpu', skia, target)
+def skia_gpu(value, skia, target):
+    if value.origin == 'default':
+        if not skia:
+            return None
+        if target.os in ('NetBSD', 'OpenBSD'):
+            return None
+    elif value and not skia:
+        die('Cannot enable Skia-GPU without enabling Skia')
+    if skia and value:
+        return True
+
+set_config('MOZ_ENABLE_SKIA_GPU', skia_gpu)
+set_define('USE_SKIA_GPU', skia_gpu)
+
+option('--enable-skia-pdf', help='Enable Skia PDF')
+
+@depends('--enable-skia-pdf', skia, target)
+def skia_pdf(value, skia, target):
+    if value.origin == 'default':
+        if not skia:
+            return None
+    elif value and not skia:
+        die('Cannot enable Skia PDF without enabling Skia')
+    if skia and value:
+        return True
+
+set_config('MOZ_ENABLE_SKIA_PDF', skia_pdf)
+set_define('MOZ_ENABLE_SKIA_PDF', skia_pdf)
+
+@depends(skia, skia_gpu)
+def skia_includes(skia, skia_gpu):
+    includes = []
+    if skia:
+        includes += [
+            '/gfx/skia',
+            '/gfx/skia/skia/include/config',
+            '/gfx/skia/skia/include/core',
+        ]
+    if skia_gpu:
+        includes += [
+            '/gfx/skia/skia/include/gpu',
+            '/gfx/skia/skia/include/utils',
+        ]
+    return includes
+
+set_config('SKIA_INCLUDES', skia_includes)
