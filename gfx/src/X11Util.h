@@ -12,7 +12,7 @@
 #  include <gdk/gdk.h>
 #  include <gdk/gdkx.h>
 #  include "X11UndefineNone.h"
-#elif defined(MOZ_WIDGET_MOTIF)
+#elif defined(MOZ_X11)
 #  include <X11/Xlib.h>
 #  include "X11UndefineNone.h"
 #  include "nsMotifDisplay.h"
@@ -33,7 +33,7 @@ DefaultXDisplay()
 {
 #if defined(MOZ_WIDGET_GTK)
   return GDK_DISPLAY_XDISPLAY(gdk_display_get_default());
-#elif defined(MOZ_WIDGET_MOTIF)
+#elif defined(MOZ_X11)
   return nsMotifGetDisplay();
 #endif
 }
