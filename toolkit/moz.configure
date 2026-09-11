@@ -275,32 +275,6 @@ def fmp4(value, target, wmf, applemedia):
 set_config('MOZ_FMP4', fmp4)
 set_define('MOZ_FMP4', fmp4)
 
-# PulseAudio support
-# ==============================================================
-option('--enable-pulseaudio', env='MOZ_PULSEAUDIO',
-       help='Enable PulseAudio support.')
-
-@depends('--enable-pulseaudio')
-def pulseaudio(value):
-    if value:
-        return True
-
-set_config('MOZ_PULSEAUDIO', pulseaudio)
-set_define('MOZ_PULSEAUDIO', pulseaudio)
-
-# ALSA support
-# ==============================================================
-option('--enable-alsa', env='MOZ_ALSA',
-       help='Enable ALSA support.')
-
-@depends('--enable-alsa')
-def alsa(value):
-    if value:
-        return True
-
-set_config('MOZ_ALSA', alsa)
-set_define('MOZ_ALSA', alsa)
-
 # EME support
 # ==============================================================
 option('--enable-eme', env='MOZ_EME', help='Enable EME support')
@@ -313,18 +287,6 @@ def eme(value):
 set_config('MOZ_EME', eme)
 set_define('MOZ_EME', eme)
 
-# WebRTC
-# ==============================================================
-option('--disable-webrtc', help='Disable WebRTC support')
-
-@depends('--disable-webrtc')
-def webrtc(value):
-    if value:
-        return True
-
-set_config('MOZ_WEBRTC', webrtc)
-set_define('MOZ_WEBRTC', webrtc)
-
 # SMIL
 # ==============================================================
 option('--disable-smil', help='Disable SMIL support')
@@ -336,18 +298,6 @@ def smil(value):
 
 set_config('MOZ_SMIL', smil)
 set_define('MOZ_SMIL', smil)
-
-# raw media
-# ==============================================================
-option('--disable-raw', env='MOZ_RAW', help='Disable support for RAW media')
-
-@depends('--disable-raw')
-def raw(value):
-    if value:
-        return True
-
-set_config('MOZ_RAW', raw)
-set_define('MOZ_RAW', raw)
 
 # Ogg
 # ==============================================================
