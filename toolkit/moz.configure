@@ -95,18 +95,20 @@ def toolkit_define(toolkit):
 
 set_define(toolkit_define, True)
 
+# Motif should use the same legacy Unix font discovery that GTK uses.
+# old-configure.in already owns the FreeType/Fontconfig probes and publishes
+# FT2_CFLAGS/CAIRO_FT_CFLAGS, so hand it the historical USE_FC_FREETYPE switch
+# instead of creating a parallel Motif-only dependency path here.
+@depends(toolkit)
+def motif_fc_freetype(toolkit):
+    if toolkit == 'motif':
+        return '1'
+
+add_old_configure_assignment('USE_FC_FREETYPE', motif_fc_freetype)
+
 # Motif has no pkg-config module in the historical ABI we target. Keep the
 # Motif/Xt link set deliberately small and let old-configure publish TK_* into
-# config. Cairo itself does have a pkg-config module, though, and the bundled
-# Cairo wrapper headers use include_next for optional backends such as PS/PDF.
-# Discover its system include path independently so Motif builds can find
-# headers such as /usr/include/cairo/cairo-ps.h without hard-coding a path.
-@depends(toolkit)
-def motif_enabled(toolkit):
-    return toolkit == 'motif'
-
-pkg_check_modules('MOTIF_CAIRO', 'cairo', when=motif_enabled)
-
+# config.
 @depends(toolkit)
 def motif_tk_libs(toolkit):
     if toolkit == 'motif':
@@ -337,7 +339,7 @@ set_define('MOZ_SMIL', smil)
 
 # raw media
 # ==============================================================
-option('--disable-raw', help='Disable support for RAW media')
+option('--disable-raw', env='MOZ_RAW', help='Disable support for RAW media')
 
 @depends('--disable-raw')
 def raw(value):
@@ -349,7 +351,7 @@ set_define('MOZ_RAW', raw)
 
 # Ogg
 # ==============================================================
-option('--disable-ogg', help='Disable Ogg support')
+option('--disable-ogg', env='MOZ_OGG', help='Disable Ogg support')
 
 @depends('--disable-ogg')
 def ogg(value):
@@ -361,7 +363,7 @@ set_define('MOZ_OGG', ogg)
 
 # Opus
 # ==============================================================
-option('--disable-opus', help='Disable Opus support')
+option('--disable-opus', env='MOZ_OPUS', help='Disable Opus support')
 
 @depends('--disable-opus')
 def opus(value):
@@ -373,7 +375,7 @@ set_define('MOZ_OPUS', opus)
 
 # Vorbis
 # ==============================================================
-option('--disable-vorbis', help='Disable Vorbis support')
+option('--disable-vorbis', env='MOZ_VORBIS', help='Disable Vorbis support')
 
 @depends('--disable-vorbis')
 def vorbis(value):
