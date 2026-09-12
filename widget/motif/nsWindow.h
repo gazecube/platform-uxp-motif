@@ -83,7 +83,7 @@ public:
   }
 
   bool HasPendingInputEvent() override;
-  bool ShouldUseOffMainThreadCompositing() override;
+  bool ShouldUseOffMainThreadCompositing() override { return false; }
   void SetModal(bool aModal) override;
   void SetSizeConstraints(const SizeConstraints& aConstraints) override;
   void CaptureMouse(bool aCapture) override;
