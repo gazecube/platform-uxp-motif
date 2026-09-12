@@ -141,19 +141,22 @@ nsAppShell::ProcessNextNativeEvent(bool aMayWait)
         return false;
     }
 
-    if (!aMayWait && XtAppPending(sAppContext) == 0) {
+    XtInputMask pending = XtAppPending(sAppContext);
+    if (!aMayWait && pending == 0) {
         return false;
     }
 
     mozilla::HangMonitor::Suspend();
     profiler_sleep_start();
 
-    XEvent event;
-    XtAppNextEvent(sAppContext, &event);
+    // Process exactly one Xt event source (X event, timer, alternate input,
+    // etc.) and return to nsBaseAppShell.  Using XtAppNextEvent here can
+    // service the Gecko wakeup pipe and then continue blocking for an X event,
+    // which strands queued Gecko work instead of unwinding back to XPCOM.
+    XtAppProcessEvent(sAppContext, XtIMAll);
 
     profiler_sleep_end();
     mozilla::HangMonitor::NotifyActivity();
 
-    XtDispatchEvent(&event);
     return true;
 }
