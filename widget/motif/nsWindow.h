@@ -9,6 +9,17 @@
 #include "nsBaseWidget.h"
 #include <X11/Intrinsic.h>
 
+/*
+ * Gecko compiles libxul with hidden visibility.  Motif's public API includes
+ * DSO-owned function and data symbols (notably XmCreateDrawingArea and
+ * _XmStrings), so their declarations must retain default visibility or gold
+ * will incorrectly require local definitions when libxul is linked.
+ *
+ * nsWindow.cpp includes this header before including the Motif headers again;
+ * the Motif include guards therefore preserve these default-visibility
+ * declarations without changing visibility for the rest of the translation
+ * unit.
+ */
 #if defined(__GNUC__)
 #  pragma GCC visibility push(default)
 #endif
@@ -18,6 +29,11 @@
 #  pragma GCC visibility pop
 #endif
 
+/*
+ * Initial Motif rollup ownership is local to the Motif backend.  It is kept
+ * separate from nsBaseWidget's private rollup bookkeeping until the popup
+ * bridge grows full X11 grab/rollup semantics.
+ */
 extern nsIRollupListener* gRollupListener;
 
 class nsWindow final : public nsBaseWidget
@@ -80,6 +96,9 @@ public:
   void CaptureMouse(bool aCapture) override;
   void CaptureRollupEvents(nsIRollupListener* aListener, bool aDoCapture) override;
 
+  // UXP requires every concrete widget backend to provide these hooks.
+  // Motif does not yet have native IME/XIM plumbing, so the input-context
+  // methods intentionally expose the neutral context until that work lands.
   nsresult ConfigureChildren(const nsTArray<Configuration>& aConfigurations) override
   {
     return NS_OK;
