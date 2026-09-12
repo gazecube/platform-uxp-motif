@@ -72,7 +72,8 @@ nsWindow::Create(nsIWidget* aParent,
   mBounds = aRect;
   mTopLevel = (mWindowType == eWindowType_toplevel ||
                mWindowType == eWindowType_dialog ||
-               mWindowType == eWindowType_popup);
+               mWindowType == eWindowType_popup ||
+               mWindowType == eWindowType_invisible);
 
   XtAppContext app = nsAppShell::GetAppContext();
   mDisplay = nsAppShell::GetDisplay();
