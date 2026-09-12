@@ -276,13 +276,25 @@ nsWindow::Enable(bool aState)
 NS_IMETHODIMP
 nsWindow::SetFocus(bool aRaise)
 {
-  if (!mWidget || !XtIsRealized(mWidget)) {
+  if (!mDisplay || !mWidget || !XtIsRealized(mWidget)) {
     return NS_ERROR_FAILURE;
   }
+
   Window window = XtWindow(mWidget);
+  if (!window) {
+    return NS_ERROR_FAILURE;
+  }
+
+  XWindowAttributes attrs;
+  if (!XGetWindowAttributes(mDisplay, window, &attrs) ||
+      attrs.map_state != IsViewable) {
+    return NS_OK;
+  }
+
   if (aRaise) {
     XRaiseWindow(mDisplay, window);
   }
+
   XSetInputFocus(mDisplay, window, RevertToParent, CurrentTime);
   return NS_OK;
 }
