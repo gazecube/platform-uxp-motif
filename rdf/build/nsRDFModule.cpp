@@ -38,18 +38,18 @@ CreateNew##_func(nsISupports* aOuter, REFNSIID aIID, void **aResult) \
         return NS_ERROR_INVALID_POINTER;                             \
     }                                                                \
     if (aOuter) {                                                    \
-        *aResult = nullptr;                                           \
+        *aResult = nullptr;                                          \
         return NS_ERROR_NO_AGGREGATION;                              \
     }                                                                \
     nsI##_ifname* inst;                                              \
     nsresult rv = NS_New##_new(&inst);                               \
     if (NS_FAILED(rv)) {                                             \
-        *aResult = nullptr;                                           \
+        *aResult = nullptr;                                          \
         return rv;                                                   \
     }                                                                \
     rv = inst->QueryInterface(aIID, aResult);                        \
     if (NS_FAILED(rv)) {                                             \
-        *aResult = nullptr;                                           \
+        *aResult = nullptr;                                          \
     }                                                                \
     NS_RELEASE(inst);             /* get rid of extra refcnt */      \
     return rv;                                                       \
@@ -75,18 +75,18 @@ CreateNew##_func(nsISupports* aOuter, REFNSIID aIID, void **aResult) \
         return NS_ERROR_INVALID_POINTER;                             \
     }                                                                \
     if (aOuter) {                                                    \
-        *aResult = nullptr;                                           \
+        *aResult = nullptr;                                          \
         return NS_ERROR_NO_AGGREGATION;                              \
     }                                                                \
     rdfI##_ifname* inst;                                             \
     nsresult rv = NS_New##_new(&inst);                               \
     if (NS_FAILED(rv)) {                                             \
-        *aResult = nullptr;                                           \
+        *aResult = nullptr;                                          \
         return rv;                                                   \
     }                                                                \
     rv = inst->QueryInterface(aIID, aResult);                        \
     if (NS_FAILED(rv)) {                                             \
-        *aResult = nullptr;                                           \
+        *aResult = nullptr;                                          \
     }                                                                \
     NS_RELEASE(inst);             /* get rid of extra refcnt */      \
     return rv;                                                       \
@@ -111,11 +111,28 @@ NS_DEFINE_NAMED_CID(NS_RDFXMLSERIALIZER_CID);
 NS_DEFINE_NAMED_CID(NS_RDFNTRIPLES_SERIALIZER_CID);
 NS_DEFINE_NAMED_CID(NS_LOCALSTORE_CID);
 
+// Mozilla 0.9 Navigator refers to three XPFE data sources that no longer
+// exist in UXP. Keep those historic contract names resolvable during the
+// frontend bring-up by providing independent empty in-memory graphs. This is
+// deliberately only compatibility scaffolding; it does not pretend to
+// implement the old bookmark/search services.
+static const nsCID kLegacyBookmarksDataSourceCID =
+    { 0x4c9f5d8a, 0x6f52, 0x4b6e,
+      { 0xa6, 0x93, 0x28, 0x76, 0xcf, 0x08, 0x73, 0xa1 } };
+static const nsCID kLegacyLocalSearchDataSourceCID =
+    { 0xb51026cd, 0x4aca, 0x49ff,
+      { 0x9f, 0x80, 0x44, 0xdf, 0x15, 0xd6, 0x67, 0xce } };
+static const nsCID kLegacyInternetSearchDataSourceCID =
+    { 0x6d44979f, 0x9a27, 0x4f0e,
+      { 0x82, 0x3d, 0xca, 0x32, 0x59, 0xd5, 0x63, 0x5b } };
 
 static const mozilla::Module::CIDEntry kRDFCIDs[] = {
     { &kNS_RDFCOMPOSITEDATASOURCE_CID, false, nullptr, CreateNewRDFCompositeDataSource },
     { &kNS_RDFFILESYSTEMDATASOURCE_CID, false, nullptr, FileSystemDataSource::Create },
     { &kNS_RDFINMEMORYDATASOURCE_CID, false, nullptr, NS_NewRDFInMemoryDataSource },
+    { &kLegacyBookmarksDataSourceCID, false, nullptr, NS_NewRDFInMemoryDataSource },
+    { &kLegacyLocalSearchDataSourceCID, false, nullptr, NS_NewRDFInMemoryDataSource },
+    { &kLegacyInternetSearchDataSourceCID, false, nullptr, NS_NewRDFInMemoryDataSource },
     { &kNS_RDFXMLDATASOURCE_CID, false, nullptr, CreateNewRDFXMLDataSource },
     { &kNS_RDFDEFAULTRESOURCE_CID, false, nullptr, CreateNewRDFDefaultResource },
     { &kNS_RDFCONTENTSINK_CID, false, nullptr, CreateNewRDFContentSink },
@@ -133,6 +150,9 @@ static const mozilla::Module::ContractIDEntry kRDFContracts[] = {
     { NS_RDF_DATASOURCE_CONTRACTID_PREFIX "composite-datasource", &kNS_RDFCOMPOSITEDATASOURCE_CID },
     { NS_RDF_DATASOURCE_CONTRACTID_PREFIX "files", &kNS_RDFFILESYSTEMDATASOURCE_CID },
     { NS_RDF_DATASOURCE_CONTRACTID_PREFIX "in-memory-datasource", &kNS_RDFINMEMORYDATASOURCE_CID },
+    { NS_RDF_DATASOURCE_CONTRACTID_PREFIX "bookmarks", &kLegacyBookmarksDataSourceCID },
+    { NS_RDF_DATASOURCE_CONTRACTID_PREFIX "localsearch", &kLegacyLocalSearchDataSourceCID },
+    { NS_RDF_DATASOURCE_CONTRACTID_PREFIX "internetsearch", &kLegacyInternetSearchDataSourceCID },
     { NS_RDF_DATASOURCE_CONTRACTID_PREFIX "xml-datasource", &kNS_RDFXMLDATASOURCE_CID },
     { NS_RDF_RESOURCE_FACTORY_CONTRACTID, &kNS_RDFDEFAULTRESOURCE_CID },
     { NS_RDF_CONTRACTID "/content-sink;1", &kNS_RDFCONTENTSINK_CID },
