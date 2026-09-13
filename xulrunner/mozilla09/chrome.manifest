@@ -4,5 +4,6 @@ skin navigator classic/1.0 chrome/navigator/skin/classic/
 content communicator chrome/communicator/content/
 locale communicator en-US chrome/communicator/locale/
 skin communicator classic/1.0 chrome/communicator/skin/classic/
+locale branding en-US chrome/branding/locale/
 locale navigator-region en-US chrome/navigator-region/locale/
 locale communicator-region en-US chrome/communicator-region/locale/
