@@ -135,8 +135,6 @@ nsWindow::Create(nsIWidget* aParent,
   if (mTopLevel) {
     XtRealizeWidget(mWidget);
     UpdateWMProtocols();
-  } else {
-    XtManageChild(mWidget);
   }
 
   mCreated = true;
