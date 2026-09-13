@@ -26,8 +26,10 @@ tar -xzf "$ARCHIVE" -C "$WORK/src"
 
 NAV="$APP/chrome/navigator"
 COMM="$APP/chrome/communicator"
+BRANDING="$APP/chrome/branding"
 mkdir -p "$NAV/content" "$NAV/locale" "$NAV/skin/classic"
 mkdir -p "$COMM/content" "$COMM/locale" "$COMM/skin/classic"
+mkdir -p "$BRANDING/locale"
 mkdir -p "$APP/chrome/navigator-region/locale"
 mkdir -p "$APP/chrome/communicator-region/locale"
 
@@ -40,6 +42,14 @@ cp -f "$SRC/xpfe/browser/resources/content/unix/platformNavigationBindings.xul" 
 cp -a "$SRC/xpfe/browser/resources/locale/en-US/." "$NAV/locale/"
 cp -f "$SRC/xpfe/browser/resources/locale/en-US/region.properties" \
       "$APP/chrome/navigator-region/locale/region.properties"
+
+# Mozilla 0.9 kept the product branding strings in the global locale package.
+# UXP still requests them through chrome://branding/locale/..., so expose the
+# exact period files as a tiny branding locale package.
+cp -f "$SRC/xpfe/global/resources/locale/en-US/brand.dtd" \
+      "$BRANDING/locale/brand.dtd"
+cp -f "$SRC/xpfe/global/resources/locale/en-US/brand.properties" \
+      "$BRANDING/locale/brand.properties"
 
 # Shared Communicator content and Unix platform bindings.
 cp -a "$SRC/xpfe/communicator/resources/content/." "$COMM/content/"
@@ -105,6 +115,7 @@ skin navigator classic/1.0 chrome/navigator/skin/classic/
 content communicator chrome/communicator/content/
 locale communicator en-US chrome/communicator/locale/
 skin communicator classic/1.0 chrome/communicator/skin/classic/
+locale branding en-US chrome/branding/locale/
 locale navigator-region en-US chrome/navigator-region/locale/
 locale communicator-region en-US chrome/communicator-region/locale/
 EOF
