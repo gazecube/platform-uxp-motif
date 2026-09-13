@@ -210,6 +210,10 @@ nsWindow::Show(bool aState)
     } else {
       XtManageChild(mWidget);
     }
+
+    Invalidate(LayoutDeviceIntRect(0, 0,
+                                   mBounds.width,
+                                   mBounds.height));
   } else {
     if (mTopLevel) {
       XtUnmapWidget(mWidget);
