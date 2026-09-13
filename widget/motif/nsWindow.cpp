@@ -614,6 +614,11 @@ nsWindow::HandleXEvent(XEvent* aEvent)
         Paint(aEvent->xexpose);
       }
       break;
+    case MapNotify:
+      Invalidate(LayoutDeviceIntRect(0, 0,
+                                     mBounds.width,
+                                     mBounds.height));
+      break;
     case ConfigureNotify: {
       bool resized = (mBounds.width != aEvent->xconfigure.width ||
                       mBounds.height != aEvent->xconfigure.height);
