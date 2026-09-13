@@ -201,3 +201,4 @@ function ShowUpdateFromResource( node )
 	OpenTaskURL( "http://www.mozilla.org/binaries.html");
 }
 
+
