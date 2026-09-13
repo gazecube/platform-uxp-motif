@@ -192,3 +192,12 @@
     }
     return false;
   }
+
+  /* Modern UXP's XUL script scope is not guaranteed to expose top-level
+   * declarations as Window properties for legacy inline event attributes.
+   * Mozilla 0.9 expected that behavior, so explicitly publish the original
+   * handlers without changing their implementations. */
+  window.prefillTextBox = prefillTextBox;
+  window.contentAreaClick = contentAreaClick;
+  window.handleLinkClick = handleLinkClick;
+  window.middleMousePaste = middleMousePaste;
