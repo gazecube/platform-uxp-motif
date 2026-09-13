@@ -26,9 +26,22 @@
  */
 
   var pref = null;
-  pref = Components.classes["@mozilla.org/preferences;1"];
-  pref = pref.getService();
-  pref = pref.QueryInterface(Components.interfaces.nsIPref);
+  try {
+    /* Mozilla 0.9 used the legacy @mozilla.org/preferences;1/nsIPref
+     * service.  UXP removed that interface, so keep the original call sites
+     * intact behind the smallest possible compatibility wrapper. */
+    var prefBranch = Components.classes["@mozilla.org/preferences-service;1"]
+                               .getService(Components.interfaces.nsIPrefBranch);
+    pref = {
+      GetBoolPref: function(name) {
+        return prefBranch.getBoolPref(name);
+      }
+    };
+  } catch (ex) {
+    /* Preference lookup is optional for the click handler.  Leaving pref
+     * null matches the original file's existing fallback paths. */
+    pref = null;
+  }
 
   // Prefill a single text field
   function prefillTextBox(target) {
