@@ -39,4 +39,11 @@ Contributor(s): ______________________________________. -->
     }
   ]]></script>
 
+  <!-- UXP's compiled XUL event-handler scope does not resolve legacy chrome
+       globals the same way Mozilla 0.9 did. Replace only this attribute with
+       an explicit window-property lookup so the original handler can run
+       when present without throwing a ReferenceError when it is not. -->
+  <browser id="content"
+           onclick="return (typeof window.contentAreaClick == 'function') ? window.contentAreaClick(event) : true;"/>
+
 </overlay>
