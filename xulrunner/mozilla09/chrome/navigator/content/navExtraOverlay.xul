@@ -23,5 +23,20 @@ Contributor(s): ______________________________________. -->
 
 <overlay id="navExtraOverlay"
          xmlns:html="http://www.w3.org/1999/xhtml"
-	 xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
-         xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"/>
+         xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+         xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
+
+  <!-- UXP compatibility: Mozilla 0.9 expected scripts from another chrome
+       package to share the Navigator window global. Load the original
+       communicator handler explicitly into that global. -->
+  <script type="application/x-javascript"><![CDATA[
+    try {
+      var loader = Components.classes["@mozilla.org/moz/jssubscript-loader;1"]
+                             .getService(Components.interfaces.mozIJSSubScriptLoader);
+      loader.loadSubScript("chrome://communicator/content/contentAreaClick.js", window);
+    } catch (ex) {
+      Components.utils.reportError(ex);
+    }
+  ]]></script>
+
+</overlay>
