@@ -13,6 +13,7 @@
 #include "nsBidiKeyboard.h"
 #include "nsClipboard.h"
 #include "nsClipboardHelper.h"
+#include "nsDragService.h"
 #include "nsScreenManagerMotif.h"
 #include "nsTransferable.h"
 #include "nsHTMLFormatConverter.h"
@@ -37,6 +38,7 @@ NS_GENERIC_FACTORY_CONSTRUCTOR(nsWindow)
 NS_GENERIC_FACTORY_CONSTRUCTOR(nsTransferable)
 NS_GENERIC_FACTORY_CONSTRUCTOR(nsHTMLFormatConverter)
 NS_GENERIC_FACTORY_CONSTRUCTOR(nsBidiKeyboard)
+NS_GENERIC_FACTORY_CONSTRUCTOR(nsDragService)
 NS_GENERIC_FACTORY_CONSTRUCTOR(nsScreenManagerMotif)
 NS_GENERIC_FACTORY_CONSTRUCTOR(nsClipboardHelper)
 NS_GENERIC_FACTORY_CONSTRUCTOR_INIT(nsClipboard, Init)
@@ -67,6 +69,7 @@ NS_DEFINE_NAMED_CID(NS_WINDOW_CID);
 NS_DEFINE_NAMED_CID(NS_CHILD_CID);
 NS_DEFINE_NAMED_CID(NS_APPSHELL_CID);
 NS_DEFINE_NAMED_CID(NS_FILEPICKER_CID);
+NS_DEFINE_NAMED_CID(NS_DRAGSERVICE_CID);
 NS_DEFINE_NAMED_CID(NS_TRANSFERABLE_CID);
 NS_DEFINE_NAMED_CID(NS_CLIPBOARD_CID);
 NS_DEFINE_NAMED_CID(NS_CLIPBOARDHELPER_CID);
@@ -83,6 +86,8 @@ static const Module::CIDEntry kWidgetCIDs[] = {
   { &kNS_APPSHELL_CID, false, nullptr, nsAppShellConstructor,
     Module::ALLOW_IN_GPU_PROCESS },
   { &kNS_FILEPICKER_CID, false, nullptr, nsFilePickerConstructor,
+    Module::MAIN_PROCESS_ONLY },
+  { &kNS_DRAGSERVICE_CID, false, nullptr, nsDragServiceConstructor,
     Module::MAIN_PROCESS_ONLY },
   { &kNS_TRANSFERABLE_CID, false, nullptr, nsTransferableConstructor },
   { &kNS_CLIPBOARD_CID, false, nullptr, nsClipboardConstructor,
@@ -106,6 +111,8 @@ static const Module::ContractIDEntry kWidgetContracts[] = {
   { "@mozilla.org/widget/appshell/motif;1", &kNS_APPSHELL_CID,
     Module::ALLOW_IN_GPU_PROCESS },
   { "@mozilla.org/filepicker;1", &kNS_FILEPICKER_CID,
+    Module::MAIN_PROCESS_ONLY },
+  { "@mozilla.org/widget/dragservice;1", &kNS_DRAGSERVICE_CID,
     Module::MAIN_PROCESS_ONLY },
   { "@mozilla.org/widget/transferable;1", &kNS_TRANSFERABLE_CID },
   { "@mozilla.org/widget/clipboard;1", &kNS_CLIPBOARD_CID,
