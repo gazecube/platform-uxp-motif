@@ -5,6 +5,7 @@
 
 #include "nsWindow.h"
 #include "nsAppShell.h"
+#include "nsXtManageWidget.h"
 
 #include "gfxContext.h"
 #include "gfxPlatform.h"
@@ -19,7 +20,6 @@
 #include "nsMathUtils.h"
 #include "nsXULAppAPI.h"
 
-#include <Xm/DrawingA.h>
 #include <Xm/Xm.h>
 #include <X11/Shell.h>
 #include <X11/cursorfont.h>
@@ -110,9 +110,22 @@ nsWindow::Create(nsIWidget* aParent,
     if (!parentWidget) {
       return NS_ERROR_FAILURE;
     }
-    mWidget = XmCreateDrawingArea(parentWidget,
-                                  const_cast<char*>("mozillaDrawingArea"),
-                                  args, n);
+    // Mozilla's original Motif backend deliberately used its NewManage
+    // XmManager subclass here instead of XmDrawingArea.  DrawingArea can
+    // spontaneously resize itself to fit its children, while Gecko expects
+    // to own native child geometry.
+    mWidget = XtVaCreateManagedWidget("drawingArea",
+                                      newManageClass,
+                                      parentWidget,
+                                      XmNx, mBounds.x,
+                                      XmNy, mBounds.y,
+                                      XmNwidth, std::max(1, mBounds.width),
+                                      XmNheight, std::max(1, mBounds.height),
+                                      XmNmarginHeight, 0,
+                                      XmNmarginWidth, 0,
+                                      XmNrecomputeSize, False,
+                                      XmNuserData, this,
+                                      nullptr);
   }
 
   if (!mWidget) {
@@ -206,12 +219,11 @@ nsWindow::Show(bool aState)
       }
       XtMapWidget(mWidget);
     } else {
+      // Match the original backend: visibility of child widgets is an Xt
+      // manage/unmanage operation.  Do not synthesize an extra repaint here;
+      // exposure/invalidation is handled by the native event path.
       XtManageChild(mWidget);
     }
-
-    Invalidate(LayoutDeviceIntRect(0, 0,
-                                   mBounds.width,
-                                   mBounds.height));
   } else {
     if (mTopLevel) {
       XtUnmapWidget(mWidget);
@@ -361,10 +373,23 @@ nsWindow::Invalidate(const LayoutDeviceIntRect& aRect)
   if (!mWidget || !XtIsRealized(mWidget)) {
     return NS_OK;
   }
-  XClearArea(mDisplay, XtWindow(mWidget),
-             aRect.x, aRect.y,
-             std::max(0, aRect.width), std::max(0, aRect.height),
-             True);
+  // Mozilla 0.9's Motif backend invalidated by queueing a
+  // GraphicsExpose event rather than by clearing the X window.  Preserve that
+  // behavior so an invalidation means "paint this region", not "erase it and
+  // hope Expose reconstruction lines up".
+  XEvent event;
+  memset(&event, 0, sizeof(event));
+  event.xgraphicsexpose.type = GraphicsExpose;
+  event.xgraphicsexpose.send_event = False;
+  event.xgraphicsexpose.display = mDisplay;
+  event.xgraphicsexpose.drawable = XtWindow(mWidget);
+  event.xgraphicsexpose.x = aRect.x;
+  event.xgraphicsexpose.y = aRect.y;
+  event.xgraphicsexpose.width = std::max(0, aRect.width);
+  event.xgraphicsexpose.height = std::max(0, aRect.height);
+  event.xgraphicsexpose.count = 0;
+  XSendEvent(mDisplay, XtWindow(mWidget), False, ExposureMask, &event);
+  XFlush(mDisplay);
   return NS_OK;
 }
 
@@ -614,10 +639,20 @@ nsWindow::HandleXEvent(XEvent* aEvent)
         Paint(aEvent->xexpose);
       }
       break;
-    case MapNotify:
-      Invalidate(LayoutDeviceIntRect(0, 0,
-                                     mBounds.width,
-                                     mBounds.height));
+    case GraphicsExpose:
+      if (aEvent->xgraphicsexpose.count == 0) {
+        XExposeEvent expose;
+        memset(&expose, 0, sizeof(expose));
+        expose.type = Expose;
+        expose.display = aEvent->xgraphicsexpose.display;
+        expose.window = static_cast<Window>(aEvent->xgraphicsexpose.drawable);
+        expose.x = aEvent->xgraphicsexpose.x;
+        expose.y = aEvent->xgraphicsexpose.y;
+        expose.width = aEvent->xgraphicsexpose.width;
+        expose.height = aEvent->xgraphicsexpose.height;
+        expose.count = 0;
+        Paint(expose);
+      }
       break;
     case ConfigureNotify: {
       bool resized = (mBounds.width != aEvent->xconfigure.width ||
@@ -797,6 +832,38 @@ nsWindow::DispatchResized()
   }
   if (mAttachedWidgetListener) {
     mAttachedWidgetListener->WindowResized(this, mBounds.width, mBounds.height);
+  }
+}
+
+void
+nsWindow::NativeResize(uint32_t aWidth, uint32_t aHeight)
+{
+  int32_t width = std::max<int32_t>(1, static_cast<int32_t>(aWidth));
+  int32_t height = std::max<int32_t>(1, static_cast<int32_t>(aHeight));
+
+  if (mBounds.width == width && mBounds.height == height) {
+    return;
+  }
+
+  mBounds.SizeTo(width, height);
+  DispatchResized();
+}
+
+extern "C" void
+nsWindow_ResizeWidget(Widget aWidget)
+{
+  nsWindow* window = nullptr;
+  Dimension width = 0;
+  Dimension height = 0;
+
+  XtVaGetValues(aWidget,
+                XmNuserData, &window,
+                XmNwidth, &width,
+                XmNheight, &height,
+                nullptr);
+
+  if (window) {
+    window->NativeResize(width, height);
   }
 }
 
