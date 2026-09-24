@@ -20,6 +20,7 @@ EXPORTS.mozilla.widget += [
 ]
 
 SOURCES += [
+    'nsXtManageWidget.c',
     'nsAppShell.cpp',
     'nsBidiKeyboard.cpp',
     'nsClipboard.cpp',
@@ -60,6 +61,7 @@ CXXFLAGS += CONFIG['TK_CFLAGS']
 # headers expose data symbols such as _XmStrings; keeping hidden visibility
 # on references to those DSO-owned symbols makes gold require a local
 # definition.  Limit the override to this backend's objects.
+CFLAGS += ['-fvisibility=default']
 CXXFLAGS += ['-fvisibility=default']
 
 # Unlike GTK/Pango, Motif does not pull the rest of the Unix graphics stack
