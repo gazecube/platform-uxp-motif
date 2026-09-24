@@ -125,6 +125,9 @@ public:
   Window XWindow() const;
   Display* XDisplay() const;
 
+  // Called by the ported Mozilla 0.9 NewManage resize procedure.
+  void NativeResize(uint32_t aWidth, uint32_t aHeight);
+
 private:
   ~nsWindow() override;
 
