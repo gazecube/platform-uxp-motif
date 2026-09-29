@@ -20,7 +20,6 @@ EXPORTS.mozilla.widget += [
 ]
 
 SOURCES += [
-    'nsXtManageWidget.c',
     'nsAppShell.cpp',
     'nsBidiKeyboard.cpp',
     'nsClipboard.cpp',
@@ -31,6 +30,7 @@ SOURCES += [
     'nsScreenMotif.cpp',
     'nsWidgetFactory.cpp',
     'nsWindow.cpp',
+    'nsXtManageWidget.c',
     'WidgetTraceEvent.cpp',
 ]
 
